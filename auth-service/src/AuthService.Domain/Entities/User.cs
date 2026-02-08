@@ -35,9 +35,9 @@ public class User
 
     public DateTime CreatedAt {get; set;} = DateTime.UtcNow;
 
-    public DateTime UpdateAt {get; set;} = DateTime.UtcNow;
+    public DateTime UpdatedAt {get; set;} = DateTime.UtcNow;
 
-    public UserProfile userProfile {get; set;} = null!;
+    public UserProfile UserProfile {get; set;} = null!;
 
     public ICollection<UserRole> UserRoles {get; set;} = [];
 

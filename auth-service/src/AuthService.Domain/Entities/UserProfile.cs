@@ -25,7 +25,7 @@ public class UserProfile
 
     public DateTime UpdatedAt = DateTime.UtcNow;
 
-    public User user {get; set;} = null!;
+    public User User {get; set;} = null!;
 
 
 }
