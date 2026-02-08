@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:13
+    container_name: paysmart_postgres
+    environment:
+      POSTGRES_USER: PAYSMART
+      POSTGRES_PASSWORD: paySmart!
+      POSTGRES_DB: paysmart_db
+    ports:
+      - "5436:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
