@@ -4,11 +4,11 @@ using AuthService.Domain.Interfaces;
 using AuthService.persistence.Data;
 using Microsoft.EntityFrameworkCore;
 
-namespace AuthService.persistence.Repositories;
+namespace AuthService.Persistence.Repositories;
 
 public class RoleRepository(ApplicationDbContext context) : IRoleRepository
 {
-     public async Task<int> CountUsersInRoleAsync(string roleName)
+    public async Task<int> CountUsersInRoleAsync(string roleName)
     {
         return await context.UserRoles
             .Include(ur => ur.Role)
@@ -21,11 +21,6 @@ public class RoleRepository(ApplicationDbContext context) : IRoleRepository
     public async Task<Role?> GetByNameAsync(string roleName)
     {
         return await context.Roles.FirstOrDefaultAsync(r => r.Name == roleName);
-    }
-
-    public Task<IReadOnlyCollection<User>> GetByRoleAsync(string roleName)
-    {
-        throw new NotImplementedException();
     }
 
     public async Task<IReadOnlyList<string>> GetUserRoleNamesAsync(string userId)
@@ -48,10 +43,5 @@ public class RoleRepository(ApplicationDbContext context) : IRoleRepository
             .Where(u => u.UserRoles.Any(ur => ur.Role.Name == roleName))
             .ToListAsync();
         return users;
-    }
-
-    Task<IReadOnlyCollection<string>> IRoleRepository.GetUserRoleNamesAsync(string userId)
-    {
-        throw new NotImplementedException();
     }
 }
