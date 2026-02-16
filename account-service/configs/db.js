@@ -32,17 +32,19 @@ export const dbConnection = async () => {
         await mongoose.connect(process.env.URI_MONGODB, {
             serverSelectionTimeoutMS: 5000,
             maxPoolSize: 10,
+            autoIndex: false
         });
+
     } catch (error) {
         console.error(`Error al conectar la DB: ${error}`);
         process.exit(1);
     }
 };
 
-// Graceful shutdown handlers
+// Graceful shutdown
 const gracefulShutdown = async (signal) => {
     console.log(`MongoDB | Received ${signal}. Closing database connection...`);
-    
+
     try {
         await mongoose.connection.close();
         console.log('MongoDB | Database connection closed successfully');
@@ -53,7 +55,6 @@ const gracefulShutdown = async (signal) => {
     }
 };
 
-// Handle different termination signals
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
-process.on('SIGUSR2', () => gracefulShutdown('SIGUSR2')); // For nodemon restarts
+process.on('SIGUSR2', () => gracefulShutdown('SIGUSR2'));

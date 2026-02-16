@@ -27,7 +27,7 @@ const routes = (app) => {
 
     app.get(`${BASE_PATH}/health`, (req, res) => {
         res.status(200).json({
-            status: 'healty',
+            status: 'healthy',
             service: 'PaySmart Admin Server'
         });
     });
