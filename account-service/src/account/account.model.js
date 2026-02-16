@@ -63,7 +63,6 @@ const accountSchema = new Schema(
 
 // Índices para optimizar búsquedas
 accountSchema.index({ userId: 1 })
-accountSchema.index({ accountNumber: 1 })
 accountSchema.index({ status: 1 })
 accountSchema.index({ userId: 1, status: 1 })
 

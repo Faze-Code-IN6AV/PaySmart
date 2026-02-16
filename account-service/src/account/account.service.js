@@ -8,3 +8,19 @@ export const createAccountRecord = async ({accountData}) => {
     
     return account;
 }
+
+export const getAccountsByUser = async (userId) => {
+    return await Account.find({ userId });
+};
+
+export const getAccountBalance = async (accountNumber, userId) => {
+    // Buscar cuenta por número y que pertenezca al usuario
+    const account = await Account.findOne({ accountNumber, userId });
+
+    if (!account) return null;
+
+    return {
+        accountNumber: account.accountNumber,
+        balance: account.balance
+    };
+};
