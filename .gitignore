@@ -1,10 +1,61 @@
-# .NET
-bin/
-obj/
+# Node
+node_modules/
+npm-debug.log*
+pnpm-lock.yaml
+yarn.lock
+package-lock.json
+
+# Logs
+logs/
+*.log
+*.log.*
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Runtime data
+dist/
+build/
+temp/
+tmp/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# VS Code
+.vscode/
+.history/
 
 # Visual Studio
 .vs/
 
-# OS
-Thumbs.db
+# OS files
 .DS_Store
+Thumbs.db
+ehthumbs.db
+Icon?
+Desktop.ini
+
+# MongoDB (si creas dumps o archivos locales)
+dump/
+*.bson
+*.json
+
+# IDE / Editor
+.idea/
+
+# Others
+*.swp
+*.swo
+*.sublime-workspace
+*.sublime-project
+
+# .NET bin/obj folders
+**/bin/
+**/obj/
+
+# Keys y archivos sensibles
+**/keys/

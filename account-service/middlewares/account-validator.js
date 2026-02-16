@@ -5,15 +5,13 @@ import { checkValidators } from './check-validators.js';
 // Validaciones para crear cuentas (account)
 export const validateCreateAccount = [
     validateJWT,
-    body('userId')
-        .trim()
-        .notEmpty()
-        .withMessage('El usuario es requerido'),
+
     body('accountType')
         .notEmpty()
         .withMessage('El tipo de cuenta es requerido.')
         .isIn(['AHORRO', 'MONETARIA', 'EMPRESARIAL'])
         .withMessage('Tipo de cuenta no válida'),
+
     body('balance')
         .notEmpty()
         .withMessage('El saldo inicial es requerido.')
@@ -34,9 +32,11 @@ export const validateCreateAccount = [
 
             return true
         }),
+
     body('currency')
         .optional()
         .isIn(['GTQ'])
         .withMessage('Moneda no válida.'),
+
     checkValidators,
 ];
