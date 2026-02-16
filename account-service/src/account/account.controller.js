@@ -3,7 +3,8 @@ import { createAccountRecord } from "./account.service.js";
 export const createAccount = async (req, res) => {
     try{
         const account = await createAccountRecord({
-            accountData: req.body
+            accountData: req.body,
+            account: req.account
         });
 
         res.status(201).json({

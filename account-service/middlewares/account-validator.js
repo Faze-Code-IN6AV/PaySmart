@@ -35,7 +35,7 @@ export const validateCreateAccount = [
             return true
         }),
     body('currency')
-        .notEmpty()
+        .optional()
         .isIn(['GTQ'])
         .withMessage('Moneda no válida.'),
     checkValidators,
