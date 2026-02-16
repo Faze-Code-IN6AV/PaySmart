@@ -1,15 +1,18 @@
 'use strict';
 
 import { Schema, model } from 'mongoose';
+import { generateAccountNumber } from '../../middlewares/generate-account-numbres.js';
 
 const accountSchema = new Schema(
     {
         accountNumber: {
             type: String,
-            required: [true, 'El número de cuenta es requerido.'],
             unique: true,
             trim: true,
-            maxLength: [20, 'El número de cuenta no puede exceder los 20 caracteres.'],
+            maxLength: [18, 'El número de cuenta no puede exceder los 18 caracteres.'],
+            default: function() {
+                return generateAccountNumber(18);
+            }
         },
         userId: {
             type: String,
