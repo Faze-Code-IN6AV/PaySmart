@@ -8,7 +8,6 @@ const accountSchema = new Schema(
         accountNumber: {
             type: String,
             unique: true,
-            trim: true,
             maxLength: [18, 'El número de cuenta no puede exceder los 18 caracteres.'],
             default: function() {
                 return generateAccountNumber(18);
