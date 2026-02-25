@@ -205,14 +205,6 @@ namespace AuthService.Persistence.Migrations
                         .HasColumnType("character varying(8)")
                         .HasColumnName("phone");
 
-                    b.Property<string>("ProfilePicture")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(250)
-                        .HasColumnType("character varying(250)")
-                        .HasDefaultValue("")
-                        .HasColumnName("profile_picture");
-
                     b.Property<string>("UserId")
                         .IsRequired()
                         .HasMaxLength(16)

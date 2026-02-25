@@ -27,6 +27,4 @@ public class RegisterDto
     [Required]
     [StringLength(8, MinimumLength = 8)]
     public string Phone { get; set; } = string.Empty;
-
-    public IFileData? ProfilePicture { get; set; }
 }

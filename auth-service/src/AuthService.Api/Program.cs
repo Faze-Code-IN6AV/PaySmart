@@ -12,21 +12,24 @@ var builder = WebApplication.CreateBuilder(args);
 // CORRECCIÓN: Omitir validación SSL (Cloudinary, etc.)
 System.Net.ServicePointManager.ServerCertificateValidationCallback += (sender, certificate, chain, sslPolicyErrors) => true;
 
-// Configure Serilog from appsettings.json only (avoid duplicate sinks)
+// Configure Serilog from appsettings.json
 builder.Host.UseSerilog((context, services, loggerConfiguration) =>
     loggerConfiguration
         .ReadFrom.Configuration(context.Configuration)
         .ReadFrom.Services(services));
 
+// Limitar logs a Information+ para producción
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
+builder.Logging.SetMinimumLevel(LogLevel.Information);
+
 // Add services to the container
 builder.Services.AddControllers(options =>
 {
-    // Agregar el enlazador de modelos para IFileData
     options.ModelBinderProviders.Insert(0, new FileDataModelBinderProvider());
 })
 .AddJsonOptions(o =>
 {
-    // Estandarizar respuestas en camelCase para coincidir con auth-node
     o.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
 });
 
@@ -35,8 +38,6 @@ builder.Services.AddApiDocumentation();
 builder.Services.AddApplicationServices(builder.Configuration);
 builder.Services.AddJwtAuthentication(builder.Configuration);
 builder.Services.AddRateLimitingPolicies();
-
-// Add security services
 builder.Services.AddSecurityPolicies(builder.Configuration);
 builder.Services.AddSecurityOptions();
 
@@ -49,10 +50,10 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-// Add Serilog request logging
+// Serilog request logging
 app.UseSerilogRequestLogging();
 
-// Add Security Headers using NetEscapades package
+// Security Headers using NetEscapades
 app.UseSecurityHeaders(policies => policies
     .AddDefaultSecurityHeaders()
     .RemoveServerHeader()
@@ -76,10 +77,9 @@ app.UseSecurityHeaders(policies => policies
     .AddCustomHeader("Cache-Control", "no-store, no-cache, must-revalidate, private")
 );
 
-// Manejo global de excepciones
+// Global exception handling
 app.UseMiddleware<GlobalExceptionMiddleware>();
 
-// Middlewares principales
 app.UseHttpsRedirection();
 app.UseCors("DefaultCorsPolicy");
 app.UseRateLimiter();
@@ -88,11 +88,8 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-// Endpoints de verificación de salud - ambas versiones para compatibilidad
-// Endpoint estándar de verificación de salud
+// Health endpoints
 app.MapHealthChecks("/health");
-
-// Endpoint personalizado de salud para coincidir con formato de respuesta Node.js
 app.MapGet("/health", () =>
 {
     var response = new
@@ -102,10 +99,9 @@ app.MapGet("/health", () =>
     };
     return Results.Ok(response);
 });
-
 app.MapHealthChecks("/api/v1/health");
 
-// Log de inicio: direcciones y endpoint de salud
+// Startup logging
 var startupLogger = app.Services.GetRequiredService<ILogger<Program>>();
 app.Lifetime.ApplicationStarted.Register(() =>
 {
@@ -134,7 +130,7 @@ app.Lifetime.ApplicationStarted.Register(() =>
     }
 });
 
-// Inicializar base de datos y datos semilla
+// Database initialization
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
@@ -143,8 +139,6 @@ using (var scope = app.Services.CreateScope())
     try
     {
         logger.LogInformation("Verificando conexión a la base de datos...");
-
-        // Garantizar que la base de datos se crea (similar a Sequelize sync en Node.js)
         await context.Database.EnsureCreatedAsync();
 
         logger.LogInformation("Base de datos lista. Ejecutando datos semilla...");
@@ -155,7 +149,7 @@ using (var scope = app.Services.CreateScope())
     catch (Exception ex)
     {
         logger.LogError(ex, "Ocurrió un error al inicializar la base de datos");
-        throw; // Relanzar para detener la aplicación
+        throw;
     }
 }
 

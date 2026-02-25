@@ -14,7 +14,6 @@ public class UserProfile
     public string UserId {get; set;} = string.Empty;
 
     [MaxLength(250)]
-    public string ProfilePicture {get; set;} = string.Empty;
 
     [Required]
     [StringLength(8, MinimumLength =8, ErrorMessage = "El numero de telefono debe de tener exactamente 8 caracteres")]
