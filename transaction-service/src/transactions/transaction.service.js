@@ -5,6 +5,8 @@ import Transaction, { TRANSACTION_TYPES } from './transaction.model.js';
 
 // URL base de account-service
 const ACCOUNT_SERVICE_URL = 'http://localhost:3021/paySmart/v1/account';
+const MAX_TRANSFER_PER_TRANSACTION = 2000;
+const MAX_DAILY_TRANSFER = 10000;
 
 /* =========================
    DEPOSITO
@@ -75,4 +77,82 @@ export const reverseDeposit = async (transactionId, accountNumber, userRole, cre
     await transaction.save();
 
     return { message: 'Depósito revertido correctamente' };
+};
+
+export const transfer = async (fromAccountNumber, toAccountNumber, amount, description = '') => {
+
+    if (amount > MAX_TRANSFER_PER_TRANSACTION) {
+        throw new Error('Excede el límite por transacción');
+    }
+
+    // 1️⃣ Obtener cuentas
+    const fromResponse = await axios.get(
+        `${ACCOUNT_SERVICE_URL}/internal/${fromAccountNumber}/balance`
+    );
+
+    const toResponse = await axios.get(
+        `${ACCOUNT_SERVICE_URL}/internal/${toAccountNumber}/balance`
+    );
+
+    const fromAccount = fromResponse.data;
+    const toAccount = toResponse.data;
+
+    if (!fromAccount || !toAccount) {
+        throw new Error('Cuenta no encontrada');
+    }
+
+    if (fromAccount.balance < amount) {
+        throw new Error('Saldo insuficiente');
+    }
+
+    // 2️⃣ Validar límite diario
+    const startOfDay = new Date();
+    startOfDay.setHours(0,0,0,0);
+
+    const dailyTotal = await Transaction.aggregate([
+        {
+            $match: {
+                accountId: fromAccount._id,
+                type: TRANSACTION_TYPES.TRANSFER,
+                createdAt: { $gte: startOfDay }
+            }
+        },
+        {
+            $group: {
+                _id: null,
+                total: { $sum: "$amount" }
+            }
+        }
+    ]);
+
+    const totalToday = dailyTotal[0]?.total || 0;
+
+    if ((totalToday + amount) > MAX_DAILY_TRANSFER) {
+        throw new Error('Excede el límite diario');
+    }
+
+    // 3️⃣ Actualizar saldos
+    await axios.patch(
+        `${ACCOUNT_SERVICE_URL}/internal/${fromAccountNumber}/balance`,
+        { amount: amount, type: TRANSACTION_TYPES.WITHDRAW }
+    );
+
+    await axios.patch(
+        `${ACCOUNT_SERVICE_URL}/internal/${toAccountNumber}/balance`,
+        { amount: amount, type: TRANSACTION_TYPES.DEPOSIT }
+    );
+
+    // 4️⃣ Guardar transacción
+    const transaction = await Transaction.create({
+        accountId: fromAccount._id,
+        accountNumber: fromAccount.accountNumber,
+        toAccountNumber: toAccount.accountNumber,
+        type: TRANSACTION_TYPES.TRANSFER,
+        amount,
+        previousBalance: fromAccount.balance,
+        newBalance: fromAccount.balance - amount,
+        description
+    });
+
+    return transaction;
 };

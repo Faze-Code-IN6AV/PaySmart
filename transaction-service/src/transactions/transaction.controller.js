@@ -1,6 +1,6 @@
 'use strict';
 
-import { deposit, reverseDeposit } from './transaction.service.js';
+import { deposit, reverseDeposit, transfer} from './transaction.service.js';
 import Transaction from './transaction.model.js';
 
 // POST /transaction/deposit
@@ -60,6 +60,37 @@ export const reverseDepositController = async (req, res) => {
         return res.status(200).json({
             success: true,
             message: result.message
+        });
+
+    } catch (error) {
+        return res.status(400).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
+
+export const transferController = async (req, res) => {
+    try {
+        const { fromAccountNumber, toAccountNumber, amount, description } = req.body;
+
+        if (!fromAccountNumber || !toAccountNumber || !amount) {
+            return res.status(400).json({
+                success: false,
+                message: 'Datos incompletos'
+            });
+        }
+
+        const transaction = await transfer(
+            fromAccountNumber,
+            toAccountNumber,
+            amount,
+            description
+        );
+
+        return res.status(201).json({
+            success: true,
+            transaction
         });
 
     } catch (error) {
