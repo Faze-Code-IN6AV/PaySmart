@@ -1,6 +1,6 @@
 'use strict';
 
-import { deposit, reverseDeposit, transfer, getAllTransactionsByAccount, getLastTransactionsByAccount } from './transaction.service.js';
+import { deposit, reverseDeposit, transfer, getAllTransactionsByAccount, getLastTransactionsByAccount, sendTransactionEmail } from './transaction.service.js';
 import Transaction from './transaction.model.js';
 
 // POST /transaction/deposit
@@ -15,7 +15,20 @@ export const depositController = async (req, res) => {
             });
         }
 
+        const userEmail = req.user?.email;
+
         const transaction = await deposit(accountNumber, amount, description);
+
+        // Enviar correo de depósito después de 1 minuto (60.000 ms)
+        if (userEmail) {
+            setTimeout(async () => {
+                try {
+                    await sendTransactionEmail(userEmail, transaction);
+                } catch (err) {
+                    // Puedes loguear el error en un logger de producción sin exponer info sensible
+                }
+            }, 60000);
+        }
 
         return res.status(201).json({
             success: true,
@@ -53,7 +66,7 @@ export const reverseDepositController = async (req, res) => {
         const result = await reverseDeposit(
             transactionId,
             transaction.accountNumber,
-            req.user?.role || 'USER',  // Ajusta según autenticación
+            req.user?.role || 'USER',
             transaction.createdAt
         );
 
@@ -70,6 +83,7 @@ export const reverseDepositController = async (req, res) => {
     }
 };
 
+// POST /transaction/transfer
 export const transferController = async (req, res) => {
     try {
         const { fromAccountNumber, toAccountNumber, amount, description } = req.body;
@@ -81,12 +95,20 @@ export const transferController = async (req, res) => {
             });
         }
 
-        const transaction = await transfer(
-            fromAccountNumber,
-            toAccountNumber,
-            amount,
-            description
-        );
+        const userEmail = req.user?.email;
+
+        const transaction = await transfer(fromAccountNumber, toAccountNumber, amount, description);
+
+        // Enviar correo de transferencia de forma inmediata
+        if (userEmail) {
+            setTimeout(async () => {
+                try {
+                    await sendTransactionEmail(userEmail, transaction);
+                } catch (err) {
+                    // Logueo seguro, sin imprimir datos sensibles
+                }
+            }, 60000); // 1 minuto
+        }
 
         return res.status(201).json({
             success: true,

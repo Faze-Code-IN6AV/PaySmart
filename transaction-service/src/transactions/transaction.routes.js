@@ -3,36 +3,14 @@
 import { Router } from 'express';
 import { depositController, reverseDepositController, listTransactionsController, listLastTransactionsController } from './transaction.controller.js';
 import { transferController } from './transaction.controller.js';
+import { middleware } from '../../middlewares/validate-JWT.js';
 
 const router = Router();
 
-// Depositar
-router.post(
-    '/deposit', 
-    depositController
-);
-
-// Revertir depósito (< 1 min)
-router.put(
-    '/reverse/:transactionId', 
-    reverseDepositController
-);
-
-router.post(
-    '/transfer', 
-    transferController
-);
-
-// Historial completo
-router.get(
-    '/:accountNumber', 
-    listTransactionsController
-);
-
-// Últimos 5 movimientos
-router.get(
-    '/:accountNumber/last', 
-    listLastTransactionsController
-);
+router.post('/deposit', middleware, depositController);
+router.post('/transfer', middleware, transferController);
+router.put('/reverse/:transactionId', middleware, reverseDepositController);
+router.get('/:accountNumber', middleware, listTransactionsController);
+router.get('/:accountNumber/last', middleware, listLastTransactionsController);
 
 export default router;
