@@ -14,7 +14,7 @@ public class HealthController : ControllerBase
         {
             status = "Healthy",
             timestamp = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffz"),
-            service = "Kinal Sports AuthService"
+            service = "Pay Smart AuthService"
         };
         return Ok(response);
     }

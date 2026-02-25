@@ -80,23 +80,131 @@ Microservicio de gestión de cuentas bancarias.
 ---
 
 ## Endpoints Principales
+## Base URL  *http://localhost:5064/api/v1*
 
 ### AuthService (/auth)
-| Método | Ruta | Descripción | Auth |
-|--------|------|-------------|------|
-| POST | /auth/register | Registrar nuevo usuario | No |
-| POST | /auth/login | Iniciar sesión | No |
-| GET  | /auth/profile | Obtener perfil autenticado | Sí |
+
+
+| Método | Ruta                        | Descripción                   | Authorization |
+|--------|-----------------------------|-------------------------------|---------------|
+| POST   | /health                     | Verificar salud del servidor  |       No      |
+| POST   | /auth/register              | Registrar nuevo usuario       |       No      |
+| GET    | /auth/verify-email          | Verificar email de un usuario |       No      |
+| POST   | /auth/login                 | Iniciar sesión                |       No      |
+| PUT    | /users/{id}/role            | Actualizar role de un usuario |       Si      | 
+| GET    | /users/{id}/roles           | Ver el role de un usario      |       Si      |
+| GET    | /users/by-role/{Name_Role}  | Ver usuario de un role        |       Si      |
+
+### Modelos de Request
+
+#### Registrar un usuario (/auth/register) - Form-Data
+```json
+{
+  "name": "nombre",
+  "surname": "apellido",
+  "username": "usuario",
+  "email": "correo",
+  "password": "password",
+  "phone":"phone"
+}
+```
+
+#### Verificar un usuario (/auth/verify-email) - JSON
+```json
+{
+  "token": "token"
+}
+```
+
+#### Login del usuario (/auth/login) - JSON
+```json
+{
+  "EmailOrUsername": "EmailOrUsername",
+  "Password":"Password"
+}
+```
+
+#### Actualizar role de un usuario (/users/{id}/role) - JSON
+- Headers: `Authorization: Bearer <token(admin))>`
+```json
+{
+  "roleName": "ADMIN_ROLE"
+}
+```
 
 ### AccountService (/account)
-| Método | Ruta | Descripción | Auth |
-|--------|------|-------------|------|
-| POST | /account | Crear cuenta bancaria | Sí |
-| GET  | /account | Obtener cuentas del usuario | Sí |
-| GET  | /account/:accountNumber/balance | Consultar saldo de una cuenta | Sí |
+| Método | Ruta                                     | Descripción                   | Authorization |
+|--------|------------------------------------------|-------------------------------|---------------|
+| POST   | /health                                  | Verificar salud del servidor  |       No      |
+| POST   | /account                                 | Crear cuenta bancaria         |       Sí      |
+| GET    | /account                                 | Obtener cuentas del usuario   |       Sí      |
+| GET    | /account/:accountNumber/balance          | Consultar saldo de una cuenta |       Sí      |
+| GET    | /account/internal/:accountNumber/balance | Consultar una cuenta          |       No      |
+| PATCH  | /account/internal/:accountNumber/balance | Agregar depositos             |       No      |
 
+### Modelos de Request
+
+#### Crear una cuenta bancaria (/account) - JSON
+- Headers: `Authorization: Bearer <token)>`
+```json
+{
+  "accountType": "accountType",
+  "balance": balance,
+  "currency": "GTQ"
+}
+```
+
+#### Agregar un deposito a una cuenta (/account/internal/:accountNumber/balance) - JSON
+```json
+{
+    "amount":"amoun",
+    "type":"DEPOSIT"
+}
+```
 ---
 
+## Estructura
+
+```
+paysmart/
+├── auth-service/
+│   ├── src/
+│   │   ├── AuthService.Api/
+│   │   ├── AuthService.Application/
+│   │   ├── AuthService.Domain/
+│   │   └── AuthService.Persistence/
+│   ├── AuthService.sln
+│   └── global.json
+│
+├── account-service/
+│   ├── configs/                     
+│   ├── middlewares/                
+│   ├── node_modules/
+│   ├── src/                         
+│   ├── .env                          
+│   ├── index.js                      
+│   ├── package.json
+│   └── pnpm-lock.yaml
+│
+├── transaction-service/
+│   ├── configs/
+│   ├── middlewares/
+│   ├── node_modules/
+│   ├── src/
+│   ├── .env
+│   ├── index.js
+│   ├── package.json
+│   └── pnpm-lock.yaml
+│
+├── postgres_db/
+│   └── docker-compose.yml            
+│
+├── .gitignore
+├── LICENSE
+└── README.md
+```
+
+---
 ## Instalación y Ejecución
 
 ### Prerequisitos
@@ -106,10 +214,37 @@ Microservicio de gestión de cuentas bancarias.
 - PostgreSQL 13+  
 - .NET 8.0 SDK (AuthService)  
 
+### Clonar repositorio
+```bash
+git clone <url-repo>
+```
+
+### Postgre_DB
+```bash
+cd .\postgre_db\
+docker compose down -v
+docker compose up -d
+```
+
+### AuthService
+```bash
+cd .\auth-service\src\AuthService.Api\
+dotnet restore
+dotnet build
+dotnet run
+```
+
 ### AccountService
 
 ```bash
-git clone <url-repo>
-cd account-service
+cd .\account-service\
 pnpm install
-pnpm dev
+pnpm run dev
+```
+
+### TransactionService
+```bash
+cd cd .\transaction-service\
+pnpm install
+pnpm run dev
+```
