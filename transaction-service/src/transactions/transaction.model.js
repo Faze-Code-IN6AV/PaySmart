@@ -4,7 +4,10 @@ import { Schema, model } from 'mongoose';
 
 export const TRANSACTION_TYPES = {
     DEPOSIT: 'DEPOSITO',
-    WITHDRAW: 'RETIRO'
+    WITHDRAW: 'RETIRO',
+    DEPOSIT: 'DEPOSIT',
+    WITHDRAW: 'WITHDRAW',
+    TRANSFER: 'TRANSFER'
 };
 
 const transactionSchema = new Schema(

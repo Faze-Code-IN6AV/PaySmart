@@ -92,8 +92,13 @@ export const getBalanceInternal = async (req, res) => {
 
 export const updateBalanceInternal = async (req, res) => {
     try {
-        const { amount, type } = req.body;
+        let { amount, type } = req.body;
         const { accountNumber } = req.params;
+
+        amount = Number(amount);
+
+        if (isNaN(amount) || amount <= 0)
+            throw new Error('El monto debe ser un número mayor a 0');
 
         const account = await Account.findOne({ accountNumber });
         if (!account) throw new Error('Cuenta no encontrada');
@@ -101,12 +106,14 @@ export const updateBalanceInternal = async (req, res) => {
         if (type === 'DEPOSIT') {
             account.balance += amount;
         }
-
-        if (type === 'WITHDRAW') {
+        else if (type === 'WITHDRAW') {
             if (account.balance < amount)
                 throw new Error('Fondos insuficientes');
 
             account.balance -= amount;
+        }
+        else {
+            throw new Error('Tipo inválido');
         }
 
         await account.save();
