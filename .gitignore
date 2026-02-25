@@ -1,9 +1,7 @@
 # Node
 node_modules/
 npm-debug.log*
-pnpm-lock.yaml
 yarn.lock
-package-lock.json
 
 # Logs
 logs/
@@ -19,11 +17,6 @@ dist/
 build/
 temp/
 tmp/
-
-# Environment files
-.env
-.env.local
-.env.*.local
 
 # VS Code
 .vscode/
@@ -42,7 +35,6 @@ Desktop.ini
 # MongoDB (si creas dumps o archivos locales)
 dump/
 *.bson
-*.json
 
 # IDE / Editor
 .idea/
