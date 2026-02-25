@@ -9,6 +9,7 @@ import { corsOptions } from './cors.configuration.js';
 import { helmetOptions } from './helmet.configuration.js';
 import { requestLimit } from './rateLimit.configuration.js';
 import { errorHandler } from '../middlewares/handle-errors.js';
+import transactionRoutes from '../src/transactions/transaction.routes.js';
 
 const BASE_PATH = '/paySmart/v1'
 
@@ -22,7 +23,7 @@ const middleware = (app) => {
 }
 
 const routes = (app) => {
-    
+    app.use(`${BASE_PATH}/transaction`, transactionRoutes);
 
     app.get(`${BASE_PATH}/health`, (req, res) => {
         res.status(200).json({
@@ -49,7 +50,7 @@ export const initServer = async() => {
         middleware(app);
         routes(app);
 
-        aop.use(errorHandler);
+        app.use(errorHandler);
         app.listen(PORT, () => {
             console.log(`PaySmart's Admin Server running on port: ${PORT}`);
             console.log(`Health Check: http://localhost:${PORT}${BASE_PATH}/health`);
