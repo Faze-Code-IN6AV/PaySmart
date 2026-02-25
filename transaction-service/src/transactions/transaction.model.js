@@ -4,9 +4,7 @@ import { Schema, model } from 'mongoose';
 
 export const TRANSACTION_TYPES = {
     DEPOSIT: 'DEPOSITO',
-    WITHDRAW: 'RETIRO',
-    TRANSFER_IN: 'TRANSFERENCIA_ENTRADA',
-    TRANSFER_OUT: 'TRANSFERENCIA_SALIDA'
+    WITHDRAW: 'RETIRO'
 };
 
 const transactionSchema = new Schema(
@@ -14,55 +12,44 @@ const transactionSchema = new Schema(
         accountId: {
             type: Schema.Types.ObjectId,
             ref: 'Account',
-            required: [true, 'La cuenta es requerida'],
-            index: true
+            required: true
         },
 
         type: {
             type: String,
-            required: [true, 'El tipo de movimiento es requerido'],
-            enum: {
-                values: Object.values(TRANSACTION_TYPES),
-                message: 'Tipo de transacción no válido'
-            }
+            required: true,
+            enum: Object.values(TRANSACTION_TYPES)
         },
 
         amount: {
             type: Number,
-            required: [true, 'El monto es requerido'],
-            min: [0.01, 'El monto debe ser mayor a 0']
+            required: true,
+            min: 0.01
         },
 
         previousBalance: {
             type: Number,
-            required: true,
-            min: 0
+            required: true
         },
 
         newBalance: {
             type: Number,
-            required: true,
-            min: 0
+            required: true
         },
 
         description: {
             type: String,
-            trim: true,
-            maxLength: [150, 'La descripción no puede exceder los 150 caracteres']
+            trim: true
         },
 
-        reference: {
+        accountNumber: {
             type: String,
-            trim: true,
-            maxLength: 50
+            required: true
         },
 
         status: {
             type: String,
-            enum: {
-                values: ['COMPLETADA', 'RECHAZADA', 'PENDIENTE'],
-                message: 'Estado de transacción no válido'
-            },
+            enum: ['COMPLETADA', 'REVERTIDA'],
             default: 'COMPLETADA'
         }
     },
@@ -71,8 +58,5 @@ const transactionSchema = new Schema(
         versionKey: false
     }
 );
-
-transactionSchema.index({ accountId: 1, createdAt: -1 });
-transactionSchema.index({ type: 1 });
 
 export default model('Transaction', transactionSchema);

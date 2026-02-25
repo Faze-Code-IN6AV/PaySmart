@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createAccount, getMyAccounts, getBalance } from './account.controller.js';
+import { createAccount, getMyAccounts, getBalance, getBalanceInternal, updateBalanceInternal } from './account.controller.js';
 import { validateCreateAccount } from '../../middlewares/account-validator.js';
 import { validateJWT } from '../../middlewares/validate-JWT.js';
 
@@ -21,6 +21,16 @@ router.get(
     '/:accountNumber/balance',
     validateJWT,
     getBalance
+);
+
+router.get(
+    '/internal/:accountNumber/balance',
+    getBalanceInternal
+);
+
+router.patch(
+    '/internal/:accountNumber/balance',
+    updateBalanceInternal
 );
 
 export default router;

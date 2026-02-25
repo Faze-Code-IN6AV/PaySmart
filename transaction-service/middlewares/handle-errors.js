@@ -3,21 +3,19 @@ export const errorHandler = (err, req, res, next) => {
     console.error(`Stack trace: ${err.stack}`);
     console.error(`Request: ${req.method} ${req.path}`);
 
-    // Error de validación de Mongoose
     if (err.name === 'ValidationError') {
         const errors = Object.values(err.errors).map((error) => ({
             account: error.path,
             message: error.message,
         }));
-    
+
         return res.status(400).json({
             success: false,
             message: 'Error de validación',
             errors,
         });
     }
-    
-    // Error de duplicado de Mongoose
+
     if (err.code === 11000) {
         const account = Object.keys(err.keyValue)[0];
 
@@ -27,8 +25,7 @@ export const errorHandler = (err, req, res, next) => {
             error: 'DUPLICATE_ACCOUNT',
         });
     }
-    
-    // Error de cast de Mongoose (ID inválido)
+
     if (err.name === 'CastError') {
         return res.status(400).json({
             success: false,
@@ -36,8 +33,7 @@ export const errorHandler = (err, req, res, next) => {
             error: 'INVALID_ID',
         });
     }
-    
-    // JWT errors
+
     if (err.name === 'JsonWebTokenError') {
         return res.status(401).json({
             success: false,
@@ -45,7 +41,7 @@ export const errorHandler = (err, req, res, next) => {
             error: 'INVALID_TOKEN',
         });
     }
-    
+
     if (err.name === 'TokenExpiredError') {
         return res.status(401).json({
             success: false,
@@ -53,8 +49,7 @@ export const errorHandler = (err, req, res, next) => {
             error: 'TOKEN_EXPIRED',
         });
     }
-    
-    // Error personalizado con status
+
     if (err.statusCode) {
         return res.status(err.statusCode).json({
             success: false,
@@ -62,13 +57,12 @@ export const errorHandler = (err, req, res, next) => {
             error: err.code || 'CUSTOM_ERROR',
         });
     }
-    
-    // Error por defecto del servidor
-    res.status(500).json({
-            success: false,
-            message: 'Error interno del servidor',
-            error: 'INTERNAL_SERVER_ERROR',
-            ...(process.env.NODE_ENV === 'development' && {
+
+    return res.status(500).json({
+        success: false,
+        message: 'Error interno del servidor',
+        error: 'INTERNAL_SERVER_ERROR',
+        ...(process.env.NODE_ENV === 'development' && {
             details: err.message,
             stack: err.stack,
         }),
