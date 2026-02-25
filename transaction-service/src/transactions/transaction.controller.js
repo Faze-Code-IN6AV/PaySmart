@@ -1,6 +1,6 @@
 'use strict';
 
-import { deposit, reverseDeposit, transfer} from './transaction.service.js';
+import { deposit, reverseDeposit, transfer, getAllTransactionsByAccount, getLastTransactionsByAccount } from './transaction.service.js';
 import Transaction from './transaction.model.js';
 
 // POST /transaction/deposit
@@ -98,5 +98,45 @@ export const transferController = async (req, res) => {
             success: false,
             message: error.message
         });
+    }
+};
+
+// GET /transaction/:accountNumber
+export const listTransactionsController = async (req, res) => {
+    try {
+        const { accountNumber } = req.params;
+        if (!accountNumber) {
+            return res.status(400).json({ success: false, message: 'Debe proporcionar el accountNumber' });
+        }
+
+        const transactions = await getAllTransactionsByAccount(accountNumber);
+
+        return res.status(200).json({
+            success: true,
+            transactions
+        });
+
+    } catch (error) {
+        return res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// GET /transaction/:accountNumber/last
+export const listLastTransactionsController = async (req, res) => {
+    try {
+        const { accountNumber } = req.params;
+        if (!accountNumber) {
+            return res.status(400).json({ success: false, message: 'Debe proporcionar el accountNumber' });
+        }
+
+        const transactions = await getLastTransactionsByAccount(accountNumber, 5);
+
+        return res.status(200).json({
+            success: true,
+            transactions
+        });
+
+    } catch (error) {
+        return res.status(500).json({ success: false, message: error.message });
     }
 };
