@@ -10,10 +10,10 @@ Actualmente se han desarrollado y probado los siguientes servicios:
 
 - **AuthService**: Autenticación y gestión de usuarios.
 - **AccountService**: Gestión de cuentas bancarias y saldo disponible.
+- **TransactionService**: Gestión de transacciones y depositos entre cuentas bancarias.
 
-Servicios planeados para próximas entregas:
+Servicios en construcciónn:
 
-- TransactionService
 - ProductService
 - FavoriteService
 - ReportService
@@ -23,14 +23,14 @@ Servicios planeados para próximas entregas:
 ## Base de Datos
 
 - **PostgreSQL**: Para gestión de usuarios y roles (AuthService).  
-- **MongoDB**: Para gestión de cuentas y transacciones (AccountService).
+- **MongoDB**: Para gestión de cuentas y transacciones (AccountService, TransactionService).
 
 ---
 
 ## Estado del Proyecto
 
-- Entrega 35% completada: **AuthService** y **AccountService** funcionales.  
-- Registro, login, JWT, roles, creación de cuentas, asociación a usuarios y consulta de saldo implementados.  
+- Entrega 50% completada: **AuthService** , **AccountService** y **TransactionService** funcionales.  
+- Registro, login, JWT, roles, creación de cuentas, asociación a usuarios, consulta de saldo, depositos, transacciones y historial de movimientos implementados.  
 - Arquitectura basada en **Clean Architecture** y buenas prácticas de microservicios.
 
 ---
@@ -77,6 +77,30 @@ Microservicio de gestión de cuentas bancarias.
 - Base de Datos: **MongoDB**  
 - Seguridad: JWT, rate limiting, validaciones con express-validator, middlewares de manejo de errores.  
 
+--- 
+## TransactionService
+
+Microservicio de gestión de transacciones bancarias.
+
+### Funcionalidades
+
+Depósitos y retiros de dinero en cuentas de usuario.
+Transferencias entre cuentas bancarias, con validaciones de saldo y límites diarios.
+Registro completo de cada transacción en la base de datos, incluyendo saldo anterior, saldo nuevo y estado de la transacción.
+Historial de movimientos por cuenta, incluyendo los últimos 5 registros.
+Reversión de depósitos dentro del primer minuto, respetando las reglas de negocio.
+Notificación por email de depósitos y transferencias (solo si la transacción no se revierte).
+Seguridad: validación de usuarios con JWT, manejo de errores y protecciones contra inconsistencias de saldo.
+
+
+### Tecnologías
+
+Backend: Node.js 20 con Express
+Base de Datos: MongoDB (Mongoose)
+HTTP requests: Axios (para comunicarse con AccountService)
+Seguridad: JWT, validaciones de input, manejo de errores centralizado
+Emails: SMTP (puede integrarse con nodemailer u otro servicio)
+
 ---
 
 ## Endpoints Principales
@@ -87,7 +111,7 @@ Microservicio de gestión de cuentas bancarias.
 
 | Método | Ruta                        | Descripción                   | Authorization |
 |--------|-----------------------------|-------------------------------|---------------|
-| POST   | /health                     | Verificar salud del servidor  |       No      |
+| GET    | /health                     | Verificar salud del servidor  |       No      |
 | POST   | /auth/register              | Registrar nuevo usuario       |       No      |
 | GET    | /auth/verify-email          | Verificar email de un usuario |       No      |
 | POST   | /auth/login                 | Iniciar sesión                |       No      |
@@ -135,7 +159,7 @@ Microservicio de gestión de cuentas bancarias.
 ### AccountService (/account)
 | Método | Ruta                                     | Descripción                   | Authorization |
 |--------|------------------------------------------|-------------------------------|---------------|
-| POST   | /health                                  | Verificar salud del servidor  |       No      |
+| GET    | /health                                  | Verificar salud del servidor  |       No      |
 | POST   | /account                                 | Crear cuenta bancaria         |       Sí      |
 | GET    | /account                                 | Obtener cuentas del usuario   |       Sí      |
 | GET    | /account/:accountNumber/balance          | Consultar saldo de una cuenta |       Sí      |
@@ -161,7 +185,31 @@ Microservicio de gestión de cuentas bancarias.
     "type":"DEPOSIT"
 }
 ```
+
+### TransacctionService (/transaction)
+| Método | Ruta                                     | Descripción                   | Authorization |
+|--------|------------------------------------------|-------------------------------|---------------|
+| GET    | /health                                  | Verificar salud del servidor  |       No      |
+| POST   | /transaction/deposit                     | Realizar un deposito          |       No      |
+| PUT    | /transaction/reverse/{id}                | Revertir el deposito          |       Sí      |
+| POST   | /transaction/transfer                    | Realiazr una transferencia    |       Sí      |
+| GET    | /transaction/{accountNumber}             | Historial de movimientos      |       Sí      |
+| GET    | /transaction/{accountNumber}/last        | Ultimos 5 movimientos         |       Sí      |
+
+### Modelos de Request
+
+#### Crear una cuenta bancaria (/account) - JSON
+- Headers: `Authorization: Bearer <token)>`
+```json
+{
+  "accountType": "accountType",
+  "balance": balance,
+  "currency": "GTQ"
+}
+```
+
 ---
+
 
 ## Estructura
 
