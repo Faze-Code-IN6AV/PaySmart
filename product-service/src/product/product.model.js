@@ -30,7 +30,7 @@ const productSchema = new Schema(
         },
         type: {
             type: String,
-            required: [true, 'El tipo de producto es requerido.'],
+            required: [true, 'El tipo de producto es requerido. Debe ser SERVICE o PRODUCT.'],
             enum: {
                 values: ['SERVICE', 'PRODUCT'],
                 message: 'Tipo de producto no válido.'
