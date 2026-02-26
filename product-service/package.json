@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon index.js"
   },
   "keywords": [],
   "author": "",
@@ -18,11 +19,12 @@
     "express-validator": "^7.3.1",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.2.3",
     "mongose": "0.0.2-security",
     "morgan": "^1.10.1",
     "uuid": "^13.0.0"
   },
   "devDependencies": {
-    "nodmeon": "0.0.1-security"
+    "nodemon": "^3.1.14"
   }
 }
