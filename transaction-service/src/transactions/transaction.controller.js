@@ -1,7 +1,8 @@
 'use strict';
 
-import { deposit, reverseDeposit, transfer, getAllTransactionsByAccount, getLastTransactionsByAccount, sendTransactionEmail } from './transaction.service.js';
+import { deposit, reverseDeposit, transfer, purchaseTransaction, getAllTransactionsByAccount, getLastTransactionsByAccount, sendTransactionEmail } from './transaction.service.js';
 import Transaction from './transaction.model.js';
+import { getAccountById, updateAccountBalance } from '../utils/accoutn.client.js';
 
 // POST /transaction/deposit
 export const depositController = async (req, res) => {
@@ -119,6 +120,34 @@ export const transferController = async (req, res) => {
         return res.status(400).json({
             success: false,
             message: error.message
+        });
+    }
+};
+
+export const purchaseTransactionController = async (req, res) => {
+    try {
+        const { accountNumber, amount, description } = req.body;
+
+        if (!accountNumber || !amount) {
+            return res.status(400).json({
+                success: false,
+                message: 'Datos incompletos'
+            });
+        }
+
+        const transaction = await purchaseTransaction(accountNumber, amount, description);
+
+        return res.status(201).json({
+            success: true,
+            transaction
+        });
+
+    } catch (error) {
+        console.log('PURCHASE ERROR:', error?.response?.data || error);
+
+        return res.status(400).json({
+            success: false,
+            message: error?.response?.data?.message || error?.message || String(error)
         });
     }
 };

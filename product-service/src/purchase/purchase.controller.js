@@ -2,12 +2,14 @@
 
 import * as purchaseService from './purchase.service.js';
 
-export const create = async (req, res, next) => {
+export const create = async (req, res) => {
   try {
+    const authHeader = req.headers.authorization;
 
     const purchase = await purchaseService.createPurchase(
       req.body,
-      req.user
+      req.user,
+      authHeader
     );
 
     return res.status(201).json({
@@ -15,8 +17,11 @@ export const create = async (req, res, next) => {
       purchase
     });
 
-  } catch (err) {
-    next(err);
+  } catch (error) {
+    return res.status(400).json({
+      success: false,
+      message: error.message
+    });
   }
 };
 

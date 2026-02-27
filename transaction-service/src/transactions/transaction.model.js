@@ -49,6 +49,11 @@ const transactionSchema = new Schema(
             type: String,
             required: true
         },
+        
+        toAccountNumber: {
+            type: String,
+            trim: true
+        },
 
         status: {
             type: String,
