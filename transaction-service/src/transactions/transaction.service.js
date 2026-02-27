@@ -3,6 +3,7 @@
 import axios from 'axios';
 import Transaction, { TRANSACTION_TYPES } from './transaction.model.js';
 import nodemailer from 'nodemailer';
+import { updateAccountBalance } from '../utils/accoutn.client.js';
 
 // URL base de account-service
 const ACCOUNT_SERVICE_URL = 'http://localhost:3021/paySmart/v1/account';
@@ -72,6 +73,9 @@ export const reverseDeposit = async (transactionId, accountNumber, userRole) => 
 TRANSFERENCIA
 ========================= */
 export const transfer = async (fromAccountNumber, toAccountNumber, amount, description = '') => {
+    amount = Number(amount);
+    if (!amount || amount <= 0) throw new Error('Monto inválido');
+    
     if (amount > MAX_TRANSFER_PER_TRANSACTION) throw new Error('Excede el límite por transacción');
 
     const fromResponse = await axios.get(`${ACCOUNT_SERVICE_URL}/internal/${fromAccountNumber}/balance`);
@@ -93,9 +97,39 @@ export const transfer = async (fromAccountNumber, toAccountNumber, amount, descr
     if ((totalToday + amount) > MAX_DAILY_TRANSFER) throw new Error('Excede el límite diario');
 
     // Actualizar saldos
-    await axios.patch(`${ACCOUNT_SERVICE_URL}/internal/${fromAccountNumber}/balance`, { amount, type: TRANSACTION_TYPES.WITHDRAW });
-    await axios.patch(`${ACCOUNT_SERVICE_URL}/internal/${toAccountNumber}/balance`, { amount, type: TRANSACTION_TYPES.DEPOSIT });
+    await axios.patch(`${ACCOUNT_SERVICE_URL}/internal/${fromAccountNumber}/balance`, { 
+        amount, 
+        type: TRANSACTION_TYPES.WITHDRAW 
+    });
 
+    try {
+        await axios.patch(`${ACCOUNT_SERVICE_URL}/internal/${toAccountNumber}/balance`, { 
+            amount, 
+            type: TRANSACTION_TYPES.DEPOSIT 
+        });
+
+    } catch (err) {
+
+        await axios.patch(`${ACCOUNT_SERVICE_URL}/internal/${fromAccountNumber}/balance`, { 
+            amount, 
+            type: TRANSACTION_TYPES.DEPOSIT 
+        });
+
+        // Registrar transferencia revertida
+        const revertedTransaction = await Transaction.create({
+            accountId: fromAccount._id,
+            accountNumber: fromAccount.accountNumber,
+            toAccountNumber: toAccount.accountNumber,
+            type: TRANSACTION_TYPES.TRANSFER,
+            amount,
+            previousBalance: fromAccount.balance,
+            newBalance: fromAccount.balance - amount,
+            description: description || 'Transferencia revertida',
+            status: 'REVERTIDA'
+        });
+
+        return revertedTransaction;
+    }
     // Guardar transacción
     const transaction = await Transaction.create({
         accountId: fromAccount._id,
@@ -105,6 +139,44 @@ export const transfer = async (fromAccountNumber, toAccountNumber, amount, descr
         amount,
         previousBalance: fromAccount.balance,
         newBalance: fromAccount.balance - amount,
+        description
+    });
+
+    return transaction;
+};
+
+/* =========================
+COMPRA (WITHDRAW)
+========================= */
+export const purchaseTransaction = async (accountNumber, amount, description = 'Compra de producto') => {
+
+    amount = Number(amount);
+    if (!amount || amount <= 0) throw new Error('Monto inválido');
+
+    // Obtener cuenta
+    const accountResponse = await axios.get(`${ACCOUNT_SERVICE_URL}/internal/${accountNumber}/balance`);
+    const account = accountResponse.data;
+
+    if (!account) throw new Error('Cuenta no encontrada');
+    if (account.balance < amount) throw new Error('Saldo insuficiente');
+
+    const previousBalance = account.balance;
+    const newBalance = previousBalance - amount;
+
+    // Descontar saldo en account-service
+    await axios.patch(`${ACCOUNT_SERVICE_URL}/internal/${accountNumber}/balance`, {
+        amount,
+        type: TRANSACTION_TYPES.WITHDRAW
+    });
+
+    // Guardar en transaction-PS → transactions
+    const transaction = await Transaction.create({
+        accountId: account._id,
+        accountNumber: account.accountNumber,
+        type: TRANSACTION_TYPES.WITHDRAW,
+        amount,
+        previousBalance,
+        newBalance,
         description
     });
 
