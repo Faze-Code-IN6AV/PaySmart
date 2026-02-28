@@ -75,7 +75,7 @@ TRANSFERENCIA
 export const transfer = async (fromAccountNumber, toAccountNumber, amount, description = '') => {
     amount = Number(amount);
     if (!amount || amount <= 0) throw new Error('Monto inválido');
-    
+
     if (amount > MAX_TRANSFER_PER_TRANSACTION) throw new Error('Excede el límite por transacción');
 
     const fromResponse = await axios.get(`${ACCOUNT_SERVICE_URL}/internal/${fromAccountNumber}/balance`);
@@ -97,22 +97,22 @@ export const transfer = async (fromAccountNumber, toAccountNumber, amount, descr
     if ((totalToday + amount) > MAX_DAILY_TRANSFER) throw new Error('Excede el límite diario');
 
     // Actualizar saldos
-    await axios.patch(`${ACCOUNT_SERVICE_URL}/internal/${fromAccountNumber}/balance`, { 
-        amount, 
-        type: TRANSACTION_TYPES.WITHDRAW 
+    await axios.patch(`${ACCOUNT_SERVICE_URL}/internal/${fromAccountNumber}/balance`, {
+        amount,
+        type: TRANSACTION_TYPES.WITHDRAW
     });
 
     try {
-        await axios.patch(`${ACCOUNT_SERVICE_URL}/internal/${toAccountNumber}/balance`, { 
-            amount, 
-            type: TRANSACTION_TYPES.DEPOSIT 
+        await axios.patch(`${ACCOUNT_SERVICE_URL}/internal/${toAccountNumber}/balance`, {
+            amount,
+            type: TRANSACTION_TYPES.DEPOSIT
         });
 
     } catch (err) {
 
-        await axios.patch(`${ACCOUNT_SERVICE_URL}/internal/${fromAccountNumber}/balance`, { 
-            amount, 
-            type: TRANSACTION_TYPES.DEPOSIT 
+        await axios.patch(`${ACCOUNT_SERVICE_URL}/internal/${fromAccountNumber}/balance`, {
+            amount,
+            type: TRANSACTION_TYPES.DEPOSIT
         });
 
         // Registrar transferencia revertida
@@ -242,25 +242,71 @@ export const getAccountsMostMovements = async (order = 'desc', limit = 10) => {
         { $match: { status: { $ne: 'REVERTIDA' } } },
 
         {
-        $group: {
-            _id: '$accountNumber',
-            accountId: { $first: '$accountId' },
-            totalMovements: { $sum: 1 },
-            lastMovementAt: { $max: '$createdAt' }
-        }
+            $group: {
+                _id: '$accountNumber',
+                accountId: { $first: '$accountId' },
+                totalMovements: { $sum: 1 },
+                lastMovementAt: { $max: '$createdAt' }
+            }
         },
         { $sort: { totalMovements: sortValue, lastMovementAt: -1 } },
         { $limit: finalLimit },
         {
-        $project: {
-            _id: 0,
-            accountNumber: '$_id',
-            accountId: 1,
-            totalMovements: 1,
-            lastMovementAt: 1
-        }
+            $project: {
+                _id: 0,
+                accountNumber: '$_id',
+                accountId: 1,
+                totalMovements: 1,
+                lastMovementAt: 1
+            }
         }
     ]);
 
     return report;
+};
+
+export const getAccountsAdminOverview = async (limit = 5) => {
+
+    const parsedLimit = Number.parseInt(limit, 10);
+    const safeLimit = Number.isNaN(parsedLimit) ? 5 : Math.max(1, Math.min(parsedLimit, 20));
+
+    // Obtener cuentas únicas desde transacciones
+    const accounts = await Transaction.aggregate([
+        { $match: { status: { $ne: 'REVERTIDA' } } },
+        {
+            $group: {
+                _id: '$accountNumber',
+                accountId: { $first: '$accountId' }
+            }
+        }
+    ]);
+
+    const result = [];
+
+    for (const acc of accounts) {
+
+        // Obtener saldo desde account-service
+        const accountResponse = await axios.get(
+            `${ACCOUNT_SERVICE_URL}/internal/${acc._id}/balance`
+        );
+
+        const accountData = accountResponse.data;
+
+        // Obtener últimos movimientos
+        const lastMovements = await Transaction.find({
+            accountNumber: acc._id,
+            status: { $ne: 'REVERTIDA' }
+        })
+            .select('type amount description status createdAt newBalance -_id')
+            .sort({ createdAt: -1 })
+            .limit(safeLimit);
+
+        result.push({
+            accountNumber: acc._id,
+            balance: accountData.balance,
+            lastMovements
+        });
+    }
+
+    return result;
 };

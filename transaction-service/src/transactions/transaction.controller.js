@@ -1,6 +1,6 @@
 'use strict';
 
-import { deposit, reverseDeposit, transfer, purchaseTransaction, getAllTransactionsByAccount, getLastTransactionsByAccount, sendTransactionEmail, getAccountsMostMovements } from './transaction.service.js';
+import { deposit, reverseDeposit, transfer, purchaseTransaction, getAllTransactionsByAccount, getLastTransactionsByAccount, sendTransactionEmail, getAccountsMostMovements, getAccountsAdminOverview} from './transaction.service.js';
 import Transaction from './transaction.model.js';
 import { getAccountById, updateAccountBalance } from '../utils/accoutn.client.js';
 
@@ -221,6 +221,35 @@ export const accountMostMovementsController = async (req, res) => {
         return res.status(400).json({
         success: false,
         message: error.message
+        });
+    }
+};
+
+// GET /transaction/internal/admin/accounts-overview
+export const accountsAdminOverviewController = async (req, res) => {
+    try {
+
+        // Solo ADMIN
+        if (req.user?.role !== 'ADMIN_ROLE') {
+            return res.status(403).json({
+                success: false,
+                message: 'No tiene permisos para ver este reporte'
+            });
+        }
+
+        const { limit = '5' } = req.query;
+
+        const report = await getAccountsAdminOverview(limit);
+
+        return res.status(200).json({
+            success: true,
+            report
+        });
+
+    } catch (error) {
+        return res.status(400).json({
+            success: false,
+            message: error.message
         });
     }
 };
