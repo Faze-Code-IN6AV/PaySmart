@@ -226,3 +226,41 @@ export const sendTransactionEmail = async (to, transaction) => {
         }
     }, 60000);
 };
+
+/* =========================
+REPORTE: CUENTAS CON MÁS MOVIMIENTOS (ASC/DESC)
+========================= */
+export const getAccountsMostMovements = async (order = 'desc', limit = 10) => {
+    const safeOrder = String(order).toLowerCase();
+    const sortValue = safeOrder === 'asc' ? 1 : -1;
+
+    const parsedLimit = Number.parseInt(limit, 10);
+    const finalLimit = Number.isNaN(parsedLimit) ? 10 : Math.max(1, Math.min(parsedLimit, 100));
+
+    const report = await Transaction.aggregate([
+        // Opcional: ignorar transacciones revertidas
+        { $match: { status: { $ne: 'REVERTIDA' } } },
+
+        {
+        $group: {
+            _id: '$accountNumber',
+            accountId: { $first: '$accountId' },
+            totalMovements: { $sum: 1 },
+            lastMovementAt: { $max: '$createdAt' }
+        }
+        },
+        { $sort: { totalMovements: sortValue, lastMovementAt: -1 } },
+        { $limit: finalLimit },
+        {
+        $project: {
+            _id: 0,
+            accountNumber: '$_id',
+            accountId: 1,
+            totalMovements: 1,
+            lastMovementAt: 1
+        }
+        }
+    ]);
+
+    return report;
+};

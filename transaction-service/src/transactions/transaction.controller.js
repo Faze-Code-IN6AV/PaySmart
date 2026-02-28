@@ -1,6 +1,6 @@
 'use strict';
 
-import { deposit, reverseDeposit, transfer, purchaseTransaction, getAllTransactionsByAccount, getLastTransactionsByAccount, sendTransactionEmail } from './transaction.service.js';
+import { deposit, reverseDeposit, transfer, purchaseTransaction, getAllTransactionsByAccount, getLastTransactionsByAccount, sendTransactionEmail, getAccountsMostMovements } from './transaction.service.js';
 import Transaction from './transaction.model.js';
 import { getAccountById, updateAccountBalance } from '../utils/accoutn.client.js';
 
@@ -176,8 +176,12 @@ export const listTransactionsController = async (req, res) => {
 export const listLastTransactionsController = async (req, res) => {
     try {
         const { accountNumber } = req.params;
+
         if (!accountNumber) {
-            return res.status(400).json({ success: false, message: 'Debe proporcionar el accountNumber' });
+            return res.status(400).json({
+                success: false,
+                message: 'Debe proporcionar el accountNumber'
+            });
         }
 
         const transactions = await getLastTransactionsByAccount(accountNumber, 5);
@@ -188,6 +192,35 @@ export const listLastTransactionsController = async (req, res) => {
         });
 
     } catch (error) {
-        return res.status(500).json({ success: false, message: error.message });
+        return res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
+
+// GET /transaction/:accountNumber/last
+// GET /transaction/internal/stats/accounts-most-movements?order=asc|desc&limit=10
+export const accountMostMovementsController = async (req, res) => {
+    try {
+        const { order = 'desc', limit = '10' } = req.query;
+
+        // (Opcional) si quieres que solo ADMIN vea esto:
+        // if (req.user?.role !== 'ADMIN') {
+        //   return res.status(403).json({ success: false, message: 'No tiene permisos para ver este reporte' });
+        // }
+
+        const report = await getAccountsMostMovements(order, limit);
+
+        return res.status(200).json({
+        success: true,
+        report
+        });
+
+    } catch (error) {
+        return res.status(400).json({
+        success: false,
+        message: error.message
+        });
     }
 };
