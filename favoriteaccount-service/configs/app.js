@@ -10,6 +10,8 @@ import { helmetOptions } from './helmet.configuration.js';
 import { requestLimit } from './rateLimit.configuration.js';
 import { errorHandler } from '../middlewares/handle-errors.js';
 
+import favoriteAccountRoutes from '../src/favoriteaccounts/favoriteAccount.routes.js';
+
 const BASE_PATH = '/paySmart/v1'
 
 const middlewares = (app) => {
@@ -29,11 +31,13 @@ const routes = (app) => {
             service: 'PaySmart Admin Server'
         });
     });
+
+    app.use(`${BASE_PATH}/favoriteAccounts`, favoriteAccountRoutes);
 }
 
 export const initServer = async () => {
     const app = express();
-    const PORT = process.env.PORT;
+    const PORT = process.env.PORT || 3035;
     app.set('trust proxy', 1);
 
     try{

@@ -1,18 +1,25 @@
-import mongoose from 'mongoose';
-
 import { Schema, model } from 'mongoose';
 
 const favoriteAccountSchema = new Schema(
   {
     userId: {
-      type: Schema.Types.ObjectId,
+      type: String, 
       required: true,
-      ref: 'User',
       index: true
     },
     accountNumber: {
       type: String,
       required: true
+    },
+    alias: {
+      type: String,
+      required: true,
+      trim: true,
+      maxlength: 50
+    },
+    isDeleted: {
+      type: Boolean,
+      default: false
     }
   },
   {
@@ -20,7 +27,7 @@ const favoriteAccountSchema = new Schema(
   }
 );
 
-// Evita que un usuario agregue la misma cuenta más de una vez
+// Evita duplicados por usuario
 favoriteAccountSchema.index(
   { userId: 1, accountNumber: 1 },
   { unique: true }
