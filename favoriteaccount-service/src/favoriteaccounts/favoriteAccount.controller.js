@@ -2,7 +2,8 @@ import {
   addFavoriteAccount,
   getFavoritesByUser,
   updateFavorite,
-  deleteFavorite
+  deleteFavorite,
+  transferToFavorite
 } from './favoriteAccount.service.js';
 
 import { toggleFavoriteStatus } from './favoriteAccount.service.js';
@@ -128,6 +129,35 @@ export const activateFavorite = async (req, res) => {
     res.status(400).json({
       success: false,
       message: error.message
+    });
+  }
+};
+
+export const quickTransfer = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const token = req.token;
+    const { id } = req.params;
+    const { fromAccountNumber, amount, description } = req.body;
+
+    const result = await transferToFavorite(
+      id,
+      userId,
+      fromAccountNumber,
+      amount,
+      description,
+      token
+    );
+
+    res.json({
+      success: true,
+      result
+    });
+
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.response?.data?.message || error.message
     });
   }
 };

@@ -3,11 +3,10 @@ import {
   createFavorite,
   getFavorites,
   editFavorite,
-  removeFavorite
-} from './favoriteAccount.controller.js';
-import {
+  removeFavorite,
   deactivateFavorite,
-  activateFavorite
+  activateFavorite,
+  quickTransfer
 } from './favoriteAccount.controller.js';
 
 
@@ -21,4 +20,6 @@ router.put('/:id', validateJWT, editFavorite);
 router.delete('/:id', validateJWT, removeFavorite);
 router.patch('/:id/deactivate', validateJWT, deactivateFavorite);
 router.patch('/:id/activate', validateJWT, activateFavorite);
+router.post('/:id/transfer', validateJWT, quickTransfer);
+
 export default router;

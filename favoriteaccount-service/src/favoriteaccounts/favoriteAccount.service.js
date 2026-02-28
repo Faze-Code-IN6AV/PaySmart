@@ -69,3 +69,40 @@ export const toggleFavoriteStatus = async (id, userId, status) => {
 
   return favorite;
 };
+
+export const transferToFavorite = async (
+  favoriteId,
+  userId,
+  fromAccountNumber,
+  amount,
+  description,
+  token
+) => {
+
+  const favorite = await FavoriteAccount.findOne({
+    _id: favoriteId,
+    userId,
+    isDeleted: false
+  });
+
+  if (!favorite) {
+    throw new Error('Cuenta favorita no encontrada');
+  }
+
+  const response = await axios.post(
+    `${process.env.TRANSACTION_SERVICE_URL}/transfer`,
+    {
+      fromAccountNumber,
+      toAccountNumber: favorite.accountNumber,
+      amount,
+      description
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    }
+  );
+
+  return response.data;
+};
