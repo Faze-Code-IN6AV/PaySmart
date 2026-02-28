@@ -29,7 +29,7 @@ const routes = (app) => {
     app.get(`${BASE_PATH}/health`, (req, res) => {
         res.status(200).json({
             status: 'healthy',
-            service: 'PaySmart Product Service'
+            service: 'PaySmart Report Service'
         });
     });
 
@@ -56,7 +56,7 @@ export const initServer = async () => {
         app.use(errorHandler);
 
         app.listen(PORT, () => {
-            console.log(`Product Service running on port: ${PORT}`);
+            console.log(`Report Service running on port: ${PORT}`);
             console.log(`Health Check: http://localhost:${PORT}${BASE_PATH}/health`);
         });
     } catch (err) {
