@@ -1,33 +1,31 @@
-import { createAccountRecord } from "./account.service.js";
-import { getAccountsByUser } from './account.service.js';
-import { getAccountBalance } from './account.service.js';
+import { createAccountRecord, getAccountsByUser, getAccountBalance } from './account.service.js';
 import Account from './account.model.js';
 
-
+// Crear una nueva cuenta bancaria asociada al usuario autenticado
 export const createAccount = async (req, res) => {
-    try{
+    try {
         const account = await createAccountRecord({
             accountData: {
                 ...req.body,
-                userId: req.user.id  
+                userId: req.user.id
             }
         });
 
         res.status(201).json({
             success: true,
-            message: 'Cuenta creada exitosamente!',
+            message: 'Cuenta creada exitosamente.',
             data: account
         });
-    }catch(err){
+    } catch (err) {
         res.status(400).json({
             success: false,
             message: 'Error al crear la cuenta.',
             error: err.message
         });
     }
-}
+};
 
-
+// Obtener todas las cuentas del usuario autenticado
 export const getMyAccounts = async (req, res, next) => {
     try {
         const accounts = await getAccountsByUser(req.user.id);
@@ -36,16 +34,16 @@ export const getMyAccounts = async (req, res, next) => {
             success: true,
             data: accounts
         });
-
     } catch (err) {
         next(err);
     }
 };
 
+// Consultar saldo de una cuenta específica del usuario autenticado
 export const getBalance = async (req, res, next) => {
     try {
         const { accountNumber } = req.params;
-        const userId = req.user.id; // usuario autenticado
+        const userId = req.user.id;
 
         const balanceInfo = await getAccountBalance(accountNumber, userId);
 
@@ -66,6 +64,7 @@ export const getBalance = async (req, res, next) => {
     }
 };
 
+// Consultar saldo de una cuenta sin autenticación (uso interno entre microservicios)
 export const getBalanceInternal = async (req, res) => {
     try {
         const { accountNumber } = req.params;
@@ -74,22 +73,26 @@ export const getBalanceInternal = async (req, res) => {
 
         if (!account) {
             return res.status(404).json({
+                success: false,
                 message: 'Cuenta no encontrada'
             });
         }
 
-        res.json({
+        res.status(200).json({
             accountNumber: account.accountNumber,
             balance: account.balance,
             _id: account._id
         });
-
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.status(500).json({
+            success: false,
+            message: err.message
+        });
     }
 };
 
-
+// Actualizar saldo de una cuenta (uso interno entre microservicios)
+// Soporta DEPOSIT para sumar y WITHDRAW para restar
 export const updateBalanceInternal = async (req, res) => {
     try {
         let { amount, type } = req.body;
@@ -97,30 +100,48 @@ export const updateBalanceInternal = async (req, res) => {
 
         amount = Number(amount);
 
-        if (isNaN(amount) || amount <= 0)
-            throw new Error('El monto debe ser un número mayor a 0');
+        if (isNaN(amount) || amount <= 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'El monto debe ser un número mayor a 0'
+            });
+        }
 
         const account = await Account.findOne({ accountNumber });
-        if (!account) throw new Error('Cuenta no encontrada');
+        if (!account) {
+            return res.status(404).json({
+                success: false,
+                message: 'Cuenta no encontrada'
+            });
+        }
 
         if (type === 'DEPOSIT') {
             account.balance += amount;
-        }
-        else if (type === 'WITHDRAW') {
-            if (account.balance < amount)
-                throw new Error('Fondos insuficientes');
-
+        } else if (type === 'WITHDRAW') {
+            if (account.balance < amount) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Fondos insuficientes'
+                });
+            }
             account.balance -= amount;
-        }
-        else {
-            throw new Error('Tipo inválido');
+        } else {
+            return res.status(400).json({
+                success: false,
+                message: 'Tipo de operación inválido. Use DEPOSIT o WITHDRAW'
+            });
         }
 
         await account.save();
 
-        res.json(account);
-
+        res.status(200).json({
+            success: true,
+            data: account
+        });
     } catch (err) {
-        res.status(400).json({ message: err.message });
+        res.status(400).json({
+            success: false,
+            message: err.message
+        });
     }
 };

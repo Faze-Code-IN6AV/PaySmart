@@ -2,9 +2,8 @@
 
 import { Schema, model } from 'mongoose';
 
+// Tipos de transacción soportados
 export const TRANSACTION_TYPES = {
-    DEPOSIT: 'DEPOSITO',
-    WITHDRAW: 'RETIRO',
     DEPOSIT: 'DEPOSIT',
     WITHDRAW: 'WITHDRAW',
     TRANSFER: 'TRANSFER'
@@ -49,7 +48,8 @@ const transactionSchema = new Schema(
             type: String,
             required: true
         },
-        
+
+        // Solo aplica para transferencias
         toAccountNumber: {
             type: String,
             trim: true

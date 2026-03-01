@@ -13,8 +13,12 @@ public class UsersController(IUserManagementService userManagementService) : Con
 {
     private async Task<bool> CurrentUserIsAdmin()
     {
-        var userId = User.Claims.FirstOrDefault(c => c.Type == "sub" || c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
+        var userId = User.Claims
+            .FirstOrDefault(c => c.Type == "sub" ||
+                c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
+
         if (string.IsNullOrEmpty(userId)) return false;
+
         var roles = await userManagementService.GetUserRolesAsync(userId);
         return roles.Contains(RoleConstants.ADMIN_ROLE);
     }
@@ -25,9 +29,7 @@ public class UsersController(IUserManagementService userManagementService) : Con
     public async Task<ActionResult<UserResponseDto>> UpdateUserRole(string userId, [FromBody] UpdateUserRoleDto dto)
     {
         if (!await CurrentUserIsAdmin())
-        {
             return StatusCode(403, new { success = false, message = "Forbidden" });
-        }
 
         var result = await userManagementService.UpdateUserRoleAsync(userId, dto.RoleName);
         return Ok(result);
@@ -47,9 +49,7 @@ public class UsersController(IUserManagementService userManagementService) : Con
     public async Task<ActionResult<IReadOnlyList<UserResponseDto>>> GetUsersByRole(string roleName)
     {
         if (!await CurrentUserIsAdmin())
-        {
             return StatusCode(403, new { success = false, message = "Forbidden" });
-        }
 
         var users = await userManagementService.GetUsersByRoleAsync(roleName);
         return Ok(users);

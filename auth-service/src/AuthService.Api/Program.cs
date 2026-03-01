@@ -1,6 +1,5 @@
 using AuthService.Api.Extensions;
 using AuthService.Api.Middlewares;
-using AuthService.Api.ModelBinders;
 using AuthService.persistence.Data;
 using NetEscapades.AspNetCore.SecurityHeaders.Infrastructure;
 using Serilog;
@@ -8,9 +7,6 @@ using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
 
 var builder = WebApplication.CreateBuilder(args);
-
-// CORRECCIÓN: Omitir validación SSL (Cloudinary, etc.)
-System.Net.ServicePointManager.ServerCertificateValidationCallback += (sender, certificate, chain, sslPolicyErrors) => true;
 
 // Configure Serilog from appsettings.json
 builder.Host.UseSerilog((context, services, loggerConfiguration) =>
@@ -24,10 +20,7 @@ builder.Logging.AddConsole();
 builder.Logging.SetMinimumLevel(LogLevel.Information);
 
 // Add services to the container
-builder.Services.AddControllers(options =>
-{
-    options.ModelBinderProviders.Insert(0, new FileDataModelBinderProvider());
-})
+builder.Services.AddControllers()
 .AddJsonOptions(o =>
 {
     o.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;

@@ -51,3 +51,25 @@ dump/
 
 # Keys y archivos sensibles
 **/keys/
+
+# Variables de entorno - Node services
+.env
+.env.local
+.env.development
+.env.production
+
+# Variables de entorno - .NET
+**/appsettings.Development.json
+**/appsettings.Production.json
+**/appsettings.Local.json
+
+# .NET publish output
+**/publish/
+
+# .NET user secrets
+**/*.user
+**/secrets.json
+
+
+# Auth service logs
+**/auth-service/src/AuthService.Api/logs/

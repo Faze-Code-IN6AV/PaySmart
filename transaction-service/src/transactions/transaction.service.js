@@ -3,10 +3,9 @@
 import axios from 'axios';
 import Transaction, { TRANSACTION_TYPES } from './transaction.model.js';
 import nodemailer from 'nodemailer';
-import { updateAccountBalance } from '../utils/accoutn.client.js';
 
 // URL base de account-service
-const ACCOUNT_SERVICE_URL = 'http://localhost:3021/paySmart/v1/account';
+const ACCOUNT_SERVICE_URL = 'http://localhost:3001/paySmart/v1/account';
 const MAX_TRANSFER_PER_TRANSACTION = 2000;
 const MAX_DAILY_TRANSFER = 10000;
 
@@ -14,6 +13,11 @@ const MAX_DAILY_TRANSFER = 10000;
 DEPOSITO
 ========================= */
 export const deposit = async (accountNumber, amount, description = '') => {
+
+    // Validar monto
+    amount = Number(amount);
+    if (isNaN(amount) || amount <= 0) throw new Error('Monto inválido');
+
     const accountResponse = await axios.get(`${ACCOUNT_SERVICE_URL}/internal/${accountNumber}/balance`);
     const account = accountResponse.data;
     if (!account) throw new Error('Cuenta no encontrada');
@@ -45,8 +49,13 @@ REVERSIÓN (< 1 MIN)
 export const reverseDeposit = async (transactionId, accountNumber, userRole) => {
     const transaction = await Transaction.findById(transactionId);
     if (!transaction) throw new Error('Transacción no encontrada');
+
+    // Validar que no esté ya revertida
+    if (transaction.status === 'REVERTIDA') throw new Error('Esta transacción ya fue revertida');
+
     if (transaction.type !== TRANSACTION_TYPES.DEPOSIT) throw new Error('Solo se pueden revertir depósitos');
 
+    // Validar que no haya pasado más de 1 minuto
     const diffSeconds = (new Date() - new Date(transaction.createdAt)) / 1000;
     if (diffSeconds > 60) throw new Error('Tiempo de reversión expirado');
 
@@ -54,8 +63,7 @@ export const reverseDeposit = async (transactionId, accountNumber, userRole) => 
     const account = accountResponse.data;
     if (!account) throw new Error('Cuenta no encontrada');
 
-    const previousBalance = account.balance;
-    const newBalance = previousBalance - transaction.amount;
+    const newBalance = account.balance - transaction.amount;
     if (newBalance < 0) throw new Error('Saldo insuficiente para revertir');
 
     await axios.patch(`${ACCOUNT_SERVICE_URL}/internal/${accountNumber}/balance`, {
@@ -73,8 +81,12 @@ export const reverseDeposit = async (transactionId, accountNumber, userRole) => 
 TRANSFERENCIA
 ========================= */
 export const transfer = async (fromAccountNumber, toAccountNumber, amount, description = '') => {
+
     amount = Number(amount);
-    if (!amount || amount <= 0) throw new Error('Monto inválido');
+    if (isNaN(amount) || amount <= 0) throw new Error('Monto inválido');
+
+    // Validar que no sea la misma cuenta
+    if (fromAccountNumber === toAccountNumber) throw new Error('No puedes transferir a la misma cuenta');
 
     if (amount > MAX_TRANSFER_PER_TRANSACTION) throw new Error('Excede el límite por transacción');
 
@@ -91,31 +103,31 @@ export const transfer = async (fromAccountNumber, toAccountNumber, amount, descr
     startOfDay.setHours(0, 0, 0, 0);
     const dailyTotal = await Transaction.aggregate([
         { $match: { accountId: fromAccount._id, type: TRANSACTION_TYPES.TRANSFER, createdAt: { $gte: startOfDay } } },
-        { $group: { _id: null, total: { $sum: "$amount" } } }
+        { $group: { _id: null, total: { $sum: '$amount' } } }
     ]);
     const totalToday = dailyTotal[0]?.total || 0;
     if ((totalToday + amount) > MAX_DAILY_TRANSFER) throw new Error('Excede el límite diario');
 
-    // Actualizar saldos
+    // Descontar saldo de la cuenta origen
     await axios.patch(`${ACCOUNT_SERVICE_URL}/internal/${fromAccountNumber}/balance`, {
         amount,
         type: TRANSACTION_TYPES.WITHDRAW
     });
 
     try {
+        // Acreditar saldo en la cuenta destino
         await axios.patch(`${ACCOUNT_SERVICE_URL}/internal/${toAccountNumber}/balance`, {
             amount,
             type: TRANSACTION_TYPES.DEPOSIT
         });
 
     } catch (err) {
-
+        // Si falla el depósito en destino, revertir el retiro en origen (rollback)
         await axios.patch(`${ACCOUNT_SERVICE_URL}/internal/${fromAccountNumber}/balance`, {
             amount,
             type: TRANSACTION_TYPES.DEPOSIT
         });
 
-        // Registrar transferencia revertida
         const revertedTransaction = await Transaction.create({
             accountId: fromAccount._id,
             accountNumber: fromAccount.accountNumber,
@@ -130,7 +142,7 @@ export const transfer = async (fromAccountNumber, toAccountNumber, amount, descr
 
         return revertedTransaction;
     }
-    // Guardar transacción
+
     const transaction = await Transaction.create({
         accountId: fromAccount._id,
         accountNumber: fromAccount.accountNumber,
@@ -151,9 +163,8 @@ COMPRA (WITHDRAW)
 export const purchaseTransaction = async (accountNumber, amount, description = 'Compra de producto') => {
 
     amount = Number(amount);
-    if (!amount || amount <= 0) throw new Error('Monto inválido');
+    if (isNaN(amount) || amount <= 0) throw new Error('Monto inválido');
 
-    // Obtener cuenta
     const accountResponse = await axios.get(`${ACCOUNT_SERVICE_URL}/internal/${accountNumber}/balance`);
     const account = accountResponse.data;
 
@@ -163,13 +174,11 @@ export const purchaseTransaction = async (accountNumber, amount, description = '
     const previousBalance = account.balance;
     const newBalance = previousBalance - amount;
 
-    // Descontar saldo en account-service
     await axios.patch(`${ACCOUNT_SERVICE_URL}/internal/${accountNumber}/balance`, {
         amount,
         type: TRANSACTION_TYPES.WITHDRAW
     });
 
-    // Guardar en transaction-PS → transactions
     const transaction = await Transaction.create({
         accountId: account._id,
         accountNumber: account.accountNumber,
@@ -213,22 +222,21 @@ export const sendTransactionEmail = async (to, transaction) => {
         html: `<p>Se ha realizado una transacción por <b>${transaction.amount}</b> en la cuenta <b>${transaction.accountNumber}</b>.</p>`
     };
 
-    // Esperar 1 minuto antes de enviar
+    // Esperar 1 minuto antes de enviar para dar tiempo a posible reversión
     setTimeout(async () => {
         try {
-            // Chequear estado actual
             const freshTransaction = await Transaction.findById(transaction._id);
             if (!freshTransaction || freshTransaction.status === 'REVERTIDA') return;
 
             await transporter.sendMail(message);
         } catch (err) {
-            console.error('Error enviando correo tras 1 minuto:', err.message);
+            console.error('Error enviando correo:', err.message);
         }
     }, 60000);
 };
 
 /* =========================
-REPORTE: CUENTAS CON MÁS MOVIMIENTOS (ASC/DESC)
+REPORTE: CUENTAS CON MÁS MOVIMIENTOS
 ========================= */
 export const getAccountsMostMovements = async (order = 'desc', limit = 10) => {
     const safeOrder = String(order).toLowerCase();
@@ -238,9 +246,7 @@ export const getAccountsMostMovements = async (order = 'desc', limit = 10) => {
     const finalLimit = Number.isNaN(parsedLimit) ? 10 : Math.max(1, Math.min(parsedLimit, 100));
 
     const report = await Transaction.aggregate([
-        // Opcional: ignorar transacciones revertidas
         { $match: { status: { $ne: 'REVERTIDA' } } },
-
         {
             $group: {
                 _id: '$accountNumber',
@@ -265,8 +271,10 @@ export const getAccountsMostMovements = async (order = 'desc', limit = 10) => {
     return report;
 };
 
+/* =========================
+REPORTE: OVERVIEW ADMIN
+========================= */
 export const getAccountsAdminOverview = async (limit = 5) => {
-
     const parsedLimit = Number.parseInt(limit, 10);
     const safeLimit = Number.isNaN(parsedLimit) ? 5 : Math.max(1, Math.min(parsedLimit, 20));
 
@@ -284,12 +292,10 @@ export const getAccountsAdminOverview = async (limit = 5) => {
     const result = [];
 
     for (const acc of accounts) {
-
-        // Obtener saldo desde account-service
+        // Obtener saldo actual desde account-service
         const accountResponse = await axios.get(
             `${ACCOUNT_SERVICE_URL}/internal/${acc._id}/balance`
         );
-
         const accountData = accountResponse.data;
 
         // Obtener últimos movimientos

@@ -2,17 +2,15 @@
 
 import jwt from 'jsonwebtoken';
 
-/**
- * Middleware para validar JWT y extraer información del usuario
- * req.user = { id, email, role }
- */
-export const middleware = (req, res, next) => {
+// Middleware para validar el token JWT en cada request protegido
+export const validateJWT = (req, res, next) => {
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
         return res.status(401).json({
             success: false,
-            message: 'Token no proporcionado'
+            message: 'Token no proporcionado',
+            error: 'MISSING_TOKEN'
         });
     }
 
@@ -20,20 +18,32 @@ export const middleware = (req, res, next) => {
 
     try {
         // Verificar token usando el mismo secret que AuthService
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const decoded = jwt.verify(token, process.env.JWT_SECRET, {
+            issuer: process.env.JWT_ISSUER,
+            audience: process.env.JWT_AUDIENCE
+        });
 
-        // Mapear claims relevantes a req.user
+        // Exponer solo la info necesaria del usuario en el request
         req.user = {
-            id: decoded.sub,               // ID del usuario
-            email: decoded.email || decoded.Email,  // Email del usuario
-            role: decoded.role             // Role del usuario
+            id: decoded.sub,
+            email: decoded.email,
+            role: decoded.role || 'USER_ROLE'
         };
 
         next();
-    } catch {
+    } catch (error) {
+        if (error.name === 'TokenExpiredError') {
+            return res.status(401).json({
+                success: false,
+                message: 'El token ha expirado',
+                error: 'TOKEN_EXPIRED'
+            });
+        }
+
         return res.status(401).json({
             success: false,
-            message: 'Token inválido o expirado'
+            message: 'Token inválido',
+            error: 'INVALID_TOKEN'
         });
     }
 };

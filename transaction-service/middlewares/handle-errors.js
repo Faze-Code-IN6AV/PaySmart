@@ -1,11 +1,12 @@
+// Middleware global para manejo centralizado de errores
 export const errorHandler = (err, req, res, next) => {
-    console.error(`Error in Admin Server: ${err.message}`);
-    console.error(`Stack trace: ${err.stack}`);
+    console.error(`Error in Transaction Service: ${err.message}`);
     console.error(`Request: ${req.method} ${req.path}`);
 
+    // Error de validación de Mongoose
     if (err.name === 'ValidationError') {
         const errors = Object.values(err.errors).map((error) => ({
-            account: error.path,
+            field: error.path,
             message: error.message,
         }));
 
@@ -16,16 +17,18 @@ export const errorHandler = (err, req, res, next) => {
         });
     }
 
+    // Error de duplicado de Mongoose (unique index)
     if (err.code === 11000) {
-        const account = Object.keys(err.keyValue)[0];
+        const field = Object.keys(err.keyValue)[0];
 
         return res.status(400).json({
             success: false,
-            message: `${account} ya existe`,
-            error: 'DUPLICATE_ACCOUNT',
+            message: `${field} ya existe`,
+            error: 'DUPLICATE_FIELD',
         });
     }
 
+    // Error de cast de Mongoose (ID con formato inválido)
     if (err.name === 'CastError') {
         return res.status(400).json({
             success: false,
@@ -34,6 +37,7 @@ export const errorHandler = (err, req, res, next) => {
         });
     }
 
+    // Errores de JWT
     if (err.name === 'JsonWebTokenError') {
         return res.status(401).json({
             success: false,
@@ -50,6 +54,7 @@ export const errorHandler = (err, req, res, next) => {
         });
     }
 
+    // Error personalizado con statusCode definido
     if (err.statusCode) {
         return res.status(err.statusCode).json({
             success: false,
@@ -58,7 +63,8 @@ export const errorHandler = (err, req, res, next) => {
         });
     }
 
-    return res.status(500).json({
+    // Error genérico del servidor
+    res.status(500).json({
         success: false,
         message: 'Error interno del servidor',
         error: 'INTERNAL_SERVER_ERROR',

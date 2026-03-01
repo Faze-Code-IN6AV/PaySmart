@@ -1,17 +1,13 @@
 import axios from 'axios';
 import FavoriteAccount from './favoriteAccount.model.js';
 
+// Agregar una cuenta favorita validando que exista en el AccountService
 export const addFavoriteAccount = async (userId, data, token) => {
   const { accountNumber, alias } = data;
 
-  // Validar cuenta en Account Service
+  // Validar que la cuenta exista en Account Service
   await axios.get(
-    `${process.env.ACCOUNT_SERVICE_URL}/${accountNumber}/balance`,
-    {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    }
+    `${process.env.ACCOUNT_SERVICE_URL}/internal/${accountNumber}/balance`
   );
 
   return await FavoriteAccount.create({
@@ -21,6 +17,7 @@ export const addFavoriteAccount = async (userId, data, token) => {
   });
 };
 
+// Obtener todas las cuentas favoritas activas y no eliminadas del usuario
 export const getFavoritesByUser = async (userId) => {
   return await FavoriteAccount.find({
     userId,
@@ -28,6 +25,7 @@ export const getFavoritesByUser = async (userId) => {
   });
 };
 
+// Actualizar el alias de una cuenta favorita
 export const updateFavorite = async (id, userId, alias) => {
   const updated = await FavoriteAccount.findOneAndUpdate(
     { _id: id, userId, isDeleted: false },
@@ -35,13 +33,12 @@ export const updateFavorite = async (id, userId, alias) => {
     { new: true }
   );
 
-  if (!updated) {
-    throw new Error('Cuenta favorita no encontrada');
-  }
+  if (!updated) throw new Error('Cuenta favorita no encontrada');
 
   return updated;
 };
 
+// Soft-delete de una cuenta favorita
 export const deleteFavorite = async (id, userId) => {
   const deleted = await FavoriteAccount.findOneAndUpdate(
     { _id: id, userId, isDeleted: false },
@@ -49,27 +46,25 @@ export const deleteFavorite = async (id, userId) => {
     { new: true }
   );
 
-  if (!deleted) {
-    throw new Error('Cuenta favorita no encontrada');
-  }
+  if (!deleted) throw new Error('Cuenta favorita no encontrada');
 
   return deleted;
 };
 
-export const toggleFavoriteStatus = async (id, userId, status) => {
+// Activar o desactivar una cuenta favorita (sin eliminarla)
+export const toggleFavoriteStatus = async (id, userId, isActive) => {
   const favorite = await FavoriteAccount.findOneAndUpdate(
-    { _id: id, userId },
-    { isDeleted: status },
+    { _id: id, userId, isDeleted: false },
+    { isActive },
     { new: true }
   );
 
-  if (!favorite) {
-    throw new Error('Cuenta favorita no encontrada');
-  }
+  if (!favorite) throw new Error('Cuenta favorita no encontrada');
 
   return favorite;
 };
 
+// Transferencia rápida a una cuenta favorita via TransactionService
 export const transferToFavorite = async (
   favoriteId,
   userId,
@@ -78,16 +73,14 @@ export const transferToFavorite = async (
   description,
   token
 ) => {
-
   const favorite = await FavoriteAccount.findOne({
     _id: favoriteId,
     userId,
-    isDeleted: false
+    isDeleted: false,
+    isActive: true
   });
 
-  if (!favorite) {
-    throw new Error('Cuenta favorita no encontrada');
-  }
+  if (!favorite) throw new Error('Cuenta favorita no encontrada o inactiva');
 
   const response = await axios.post(
     `${process.env.TRANSACTION_SERVICE_URL}/transfer`,
@@ -98,9 +91,7 @@ export const transferToFavorite = async (
       description
     },
     {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
+      headers: { Authorization: `Bearer ${token}` }
     }
   );
 

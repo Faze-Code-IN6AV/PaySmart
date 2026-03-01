@@ -1,8 +1,17 @@
 'use strict';
 
-import { deposit, reverseDeposit, transfer, purchaseTransaction, getAllTransactionsByAccount, getLastTransactionsByAccount, sendTransactionEmail, getAccountsMostMovements, getAccountsAdminOverview} from './transaction.service.js';
+import {
+    deposit,
+    reverseDeposit,
+    transfer,
+    purchaseTransaction,
+    getAllTransactionsByAccount,
+    getLastTransactionsByAccount,
+    sendTransactionEmail,
+    getAccountsMostMovements,
+    getAccountsAdminOverview
+} from './transaction.service.js';
 import Transaction from './transaction.model.js';
-import { getAccountById, updateAccountBalance } from '../utils/accoutn.client.js';
 
 // POST /transaction/deposit
 export const depositController = async (req, res) => {
@@ -20,15 +29,9 @@ export const depositController = async (req, res) => {
 
         const transaction = await deposit(accountNumber, amount, description);
 
-        // Enviar correo de depósito después de 1 minuto (60.000 ms)
+        // Enviar correo después de 1 minuto, solo si no se revierte
         if (userEmail) {
-            setTimeout(async () => {
-                try {
-                    await sendTransactionEmail(userEmail, transaction);
-                } catch (err) {
-                    // Puedes loguear el error en un logger de producción sin exponer info sensible
-                }
-            }, 60000);
+            sendTransactionEmail(userEmail, transaction);
         }
 
         return res.status(201).json({
@@ -37,11 +40,12 @@ export const depositController = async (req, res) => {
         });
 
     } catch (error) {
-        return res.status(400).json({
-            success: false,
-            message: error.message
-        });
-    }
+    console.log('ERROR DEPOSIT:', error?.response?.data || error?.message || error);
+    return res.status(400).json({
+        success: false,
+        message: error?.response?.data?.message || error?.message || 'Error desconocido'
+    });
+}
 };
 
 // PUT /transaction/reverse/:transactionId
@@ -67,8 +71,7 @@ export const reverseDepositController = async (req, res) => {
         const result = await reverseDeposit(
             transactionId,
             transaction.accountNumber,
-            req.user?.role || 'USER',
-            transaction.createdAt
+            req.user?.role || 'USER_ROLE'
         );
 
         return res.status(200).json({
@@ -100,15 +103,9 @@ export const transferController = async (req, res) => {
 
         const transaction = await transfer(fromAccountNumber, toAccountNumber, amount, description);
 
-        // Enviar correo de transferencia de forma inmediata
+        // Enviar correo después de 1 minuto, solo si no se revierte
         if (userEmail) {
-            setTimeout(async () => {
-                try {
-                    await sendTransactionEmail(userEmail, transaction);
-                } catch (err) {
-                    // Logueo seguro, sin imprimir datos sensibles
-                }
-            }, 60000); // 1 minuto
+            sendTransactionEmail(userEmail, transaction);
         }
 
         return res.status(201).json({
@@ -124,6 +121,7 @@ export const transferController = async (req, res) => {
     }
 };
 
+// POST /transaction/purchase
 export const purchaseTransactionController = async (req, res) => {
     try {
         const { accountNumber, amount, description } = req.body;
@@ -143,8 +141,6 @@ export const purchaseTransactionController = async (req, res) => {
         });
 
     } catch (error) {
-        console.log('PURCHASE ERROR:', error?.response?.data || error);
-
         return res.status(400).json({
             success: false,
             message: error?.response?.data?.message || error?.message || String(error)
@@ -156,9 +152,6 @@ export const purchaseTransactionController = async (req, res) => {
 export const listTransactionsController = async (req, res) => {
     try {
         const { accountNumber } = req.params;
-        if (!accountNumber) {
-            return res.status(400).json({ success: false, message: 'Debe proporcionar el accountNumber' });
-        }
 
         const transactions = await getAllTransactionsByAccount(accountNumber);
 
@@ -168,7 +161,10 @@ export const listTransactionsController = async (req, res) => {
         });
 
     } catch (error) {
-        return res.status(500).json({ success: false, message: error.message });
+        return res.status(500).json({
+            success: false,
+            message: error.message
+        });
     }
 };
 
@@ -176,13 +172,6 @@ export const listTransactionsController = async (req, res) => {
 export const listLastTransactionsController = async (req, res) => {
     try {
         const { accountNumber } = req.params;
-
-        if (!accountNumber) {
-            return res.status(400).json({
-                success: false,
-                message: 'Debe proporcionar el accountNumber'
-            });
-        }
 
         const transactions = await getLastTransactionsByAccount(accountNumber, 5);
 
@@ -199,28 +188,22 @@ export const listLastTransactionsController = async (req, res) => {
     }
 };
 
-// GET /transaction/:accountNumber/last
 // GET /transaction/internal/stats/accounts-most-movements?order=asc|desc&limit=10
 export const accountMostMovementsController = async (req, res) => {
     try {
         const { order = 'desc', limit = '10' } = req.query;
 
-        // (Opcional) si quieres que solo ADMIN vea esto:
-        // if (req.user?.role !== 'ADMIN') {
-        //   return res.status(403).json({ success: false, message: 'No tiene permisos para ver este reporte' });
-        // }
-
         const report = await getAccountsMostMovements(order, limit);
 
         return res.status(200).json({
-        success: true,
-        report
+            success: true,
+            report
         });
 
     } catch (error) {
         return res.status(400).json({
-        success: false,
-        message: error.message
+            success: false,
+            message: error.message
         });
     }
 };
@@ -228,8 +211,7 @@ export const accountMostMovementsController = async (req, res) => {
 // GET /transaction/internal/admin/accounts-overview
 export const accountsAdminOverviewController = async (req, res) => {
     try {
-
-        // Solo ADMIN
+        // Solo ADMIN puede ver este reporte
         if (req.user?.role !== 'ADMIN_ROLE') {
             return res.status(403).json({
                 success: false,

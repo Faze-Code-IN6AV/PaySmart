@@ -3,7 +3,7 @@ import { Schema, model } from 'mongoose';
 const favoriteAccountSchema = new Schema(
   {
     userId: {
-      type: String, 
+      type: String,
       required: true,
       index: true
     },
@@ -17,9 +17,15 @@ const favoriteAccountSchema = new Schema(
       trim: true,
       maxlength: 50
     },
+    // Soft-delete: true significa que fue eliminada
     isDeleted: {
       type: Boolean,
       default: false
+    },
+    // Estado activo/inactivo independiente del soft-delete
+    isActive: {
+      type: Boolean,
+      default: true
     }
   },
   {
