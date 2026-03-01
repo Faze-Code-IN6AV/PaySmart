@@ -35,3 +35,11 @@ export const disableProductRecord = async (id) => {
         { new: true }
     );
 };
+
+export const enableProductRecord = async (id) => {
+    return await Product.findByIdAndUpdate(
+        id,
+        { status: 'ACTIVO' },
+        { new: true }
+    );
+};

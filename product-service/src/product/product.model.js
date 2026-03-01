@@ -36,6 +36,12 @@ const productSchema = new Schema(
                 message: 'Tipo de producto no válido.'
             }
         },
+        // Stock disponible, null significa ilimitado
+        stock: {
+            type: Number,
+            default: null,
+            min: [0, 'El stock no puede ser negativo.']
+        },
         exclusive: {
             type: Boolean,
             default: false

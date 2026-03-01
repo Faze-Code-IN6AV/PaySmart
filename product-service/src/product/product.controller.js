@@ -1,13 +1,6 @@
 'use strict';
 
-import {
-    createProductRecord,
-    getAllProductRecords,
-    getActiveProducts,
-    getProductByIdRecord,
-    updateProductRecord,
-    disableProductRecord
-} from './product.service.js';
+import { createProductRecord, getAllProductRecords, getActiveProducts, getProductByIdRecord, updateProductRecord, disableProductRecord, enableProductRecord } from './product.service.js';
 
 export const createProduct = async (req, res) => {
     try {
@@ -124,6 +117,30 @@ export const disableProduct = async (req, res) => {
         res.json({
             success: true,
             message: 'Producto desactivado correctamente'
+        });
+
+    } catch (err) {
+        res.status(400).json({
+            success: false,
+            message: err.message
+        });
+    }
+};
+
+export const enableProduct = async (req, res) => {
+    try {
+        const product = await enableProductRecord(req.params.id);
+
+        if (!product) {
+            return res.status(404).json({
+                success: false,
+                message: 'Producto no encontrado'
+            });
+        }
+
+        res.json({
+            success: true,
+            message: 'Producto activado correctamente'
         });
 
     } catch (err) {

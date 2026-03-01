@@ -3,9 +3,8 @@
 import axios from 'axios';
 import Purchase from './purchase.model.js';
 import Product from '../product/product.model.js';
-import { v4 as uuidv4 } from 'uuid';
 
-const TRANSACTION_SERVICE_URL = 'http://localhost:3030/paySmart/v1/transaction';
+const TRANSACTION_SERVICE_URL = 'http://localhost:3002/paySmart/v1/transaction';
 
 export const createPurchase = async (data, user, authHeader) => {
   const { product, quantity, fromAccountNumber } = data;
