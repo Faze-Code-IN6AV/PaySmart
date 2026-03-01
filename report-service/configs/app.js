@@ -4,12 +4,10 @@ import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
 import helmet from 'helmet';
-import { dbConnection } from './db.js';
 import { corsOptions } from './cors.configuration.js';
 import { helmetOptions } from './helmet.configuration.js';
 import { requestLimit } from './rateLimit.configuration.js';
 import { errorHandler } from '../middlewares/handle-errors.js';
-
 import reportRoutes from '../src/reports/report.routes.js';
 
 const BASE_PATH = '/paySmart/v1';
@@ -33,10 +31,11 @@ const routes = (app) => {
         });
     });
 
-    app.get((req, res) => {
+    // Ruta no encontrada
+    app.use((req, res) => {
         res.status(404).json({
             success: false,
-            message: 'Ruta no existente en el servidor de PaySmart Report Service'
+            message: 'Ruta no encontrada'
         });
     });
 };
@@ -48,15 +47,13 @@ export const initServer = async () => {
     app.set('trust proxy', 1);
 
     try {
-        await dbConnection();
-
         middlewares(app);
         routes(app);
 
         app.use(errorHandler);
 
         app.listen(PORT, () => {
-            console.log(`Report Service running on port: ${PORT}`);
+            console.log(`PaySmart's Report Service running on port: ${PORT}`);
             console.log(`Health Check: http://localhost:${PORT}${BASE_PATH}/health`);
         });
     } catch (err) {
