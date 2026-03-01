@@ -1,6 +1,6 @@
 # PaySmart
 
-Sistema de pagos basado en arquitectura de microservicios, desarrollado como parte del curso IN6AV - Kinal Guatemala 2026 (Entrega 35%).
+Sistema de pagos basado en arquitectura de microservicios, desarrollado como parte del curso IN6AV - Kinal Guatemala 2026.
 
 ---
 
@@ -18,7 +18,14 @@ Sistema de pagos basado en arquitectura de microservicios, desarrollado como par
 ## Base de Datos
 
 - **PostgreSQL**: Para gestión de usuarios y roles (AuthService).
-- **MongoDB**: Para gestión de cuentas, transacciones, productos, cuentas favoritas y reportes (demás servicios).
+- **MongoDB**: Para los demás servicios. Cada servicio usa su propia base de datos.
+
+| Servicio               | Base de Datos     |
+|------------------------|-------------------|
+| AccountService         | account-PS        |
+| TransactionService     | transaction-PS    |
+| ProductService         | product-PS        |
+| FavoriteAccountService | favorite-PS       |
 
 ---
 
@@ -27,6 +34,19 @@ Sistema de pagos basado en arquitectura de microservicios, desarrollado como par
 - Todos los microservicios funcionales y probados.
 - Registro, login, JWT, roles, verificación de email, recuperación de contraseña, creación de cuentas, transacciones, historial, productos, compras, cuentas favoritas y reportes implementados.
 - Arquitectura basada en **Clean Architecture** (AuthService) y buenas prácticas de microservicios.
+
+---
+
+## Puertos por Servicio
+
+| Servicio               | Puerto |
+|------------------------|--------|
+| AuthService            | 3000   |
+| AccountService         | 3001   |
+| TransactionService     | 3002   |
+| ProductService         | 3003   |
+| FavoriteAccountService | 3004   |
+| ReportService          | 3005   |
 
 ---
 
@@ -43,7 +63,6 @@ Microservicio de autenticación y gestión de usuarios.
 - Perfil de usuario autenticado.
 - Sistema de roles y permisos (USER_ROLE, ADMIN_ROLE).
 - Protecciones de seguridad: hashing con Argon2, JWT expirables, rate limiting, security headers.
-- Middleware global para manejo de errores.
 
 ### Tecnologías
 
@@ -74,126 +93,7 @@ Copia `appsettings.example.json` como `appsettings.json` y completa los valores:
 }
 ```
 
----
-
-## AccountService
-
-Microservicio de gestión de cuentas bancarias.
-
-### Funcionalidades
-
-- Crear cuentas y asociarlas a un usuario autenticado.
-- Generar números de cuenta aleatorios de 18 dígitos.
-- Consultar todas las cuentas de un usuario.
-- Consultar saldo disponible de una cuenta específica.
-- Validaciones de saldo mínimo según tipo de cuenta (Ahorro: Q100, Monetaria: Q200, Empresarial: Q1000).
-- Endpoints internos para comunicación entre microservicios.
-
-### Tecnologías
-
-- Backend: **Node.js + Express**
-- Base de Datos: **MongoDB**
-- Seguridad: JWT, rate limiting, validaciones con express-validator, middlewares de manejo de errores.
-
----
-
-## TransactionService
-
-Microservicio de gestión de transacciones bancarias.
-
-### Funcionalidades
-
-- Depósitos en cuentas de usuario.
-- Transferencias entre cuentas con validación de saldo y límites (Q2,000 por transacción / Q10,000 diarios).
-- Compras de productos mediante descuento de saldo.
-- Reversión de depósitos dentro del primer minuto.
-- Registro completo de cada transacción (saldo anterior, saldo nuevo, estado).
-- Historial de movimientos por cuenta y últimos 5 registros.
-- Notificación por email de depósitos y transferencias (solo si no se revierten).
-- Rollback automático si falla el depósito en cuenta destino durante una transferencia.
-- Reportes internos de cuentas con más movimientos.
-
-### Tecnologías
-
-- Backend: **Node.js 20 con Express**
-- Base de Datos: **MongoDB (Mongoose)**
-- HTTP requests: **Axios** (comunicación con AccountService)
-- Seguridad: JWT, validaciones de input, manejo de errores centralizado
-- Emails: SMTP con Nodemailer
-
----
-
-## ProductService
-
-Microservicio de gestión de productos disponibles para compra.
-
-### Funcionalidades
-
-- CRUD completo de productos (solo ADMIN).
-- Desactivación lógica de productos.
-- Consulta de productos disponibles para clientes.
-- Control de stock por producto.
-
-### Tecnologías
-
-- Backend: **Node.js + Express**
-- Base de Datos: **MongoDB**
-- Seguridad: JWT, validación de roles (ADMIN_ROLE)
-
----
-
-## FavoriteAccountService
-
-Microservicio para gestionar cuentas bancarias favoritas.
-
-### Funcionalidades
-
-- Agregar cuentas favoritas con alias.
-- Listar, editar y eliminar cuentas favoritas (soft-delete).
-- Activar y desactivar cuentas favoritas.
-- Transferencia rápida a cuenta favorita directamente desde el servicio.
-
-### Tecnologías
-
-- Backend: **Node.js + Express**
-- Base de Datos: **MongoDB**
-- Seguridad: JWT, comunicación con AccountService y TransactionService vía Axios
-
----
-
-## ReportService
-
-Microservicio de reportes administrativos.
-
-### Funcionalidades
-
-- Reporte de cuentas con más movimientos (ordenable ASC/DESC, con límite configurable).
-- Reporte de resumen administrativo de cuentas con sus últimos movimientos.
-
-### Tecnologías
-
-- Backend: **Node.js + Express**
-- Seguridad: JWT
-- Comunicación con TransactionService vía Axios
-
----
-
-## Puertos por Servicio
-
-| Servicio               | Puerto |
-|------------------------|--------|
-| AuthService            | 3000   |
-| AccountService         | 3021   |
-| TransactionService     | 3030   |
-| ProductService         | 3009   |
-| FavoriteAccountService | 3035   |
-| ReportService          | 3040   |
-
----
-
-## Endpoints Principales
-
-### AuthService
+### Endpoints
 **Base URL:** `http://localhost:3000/api/v1`
 
 | Método | Ruta                        | Descripción                        | Authorization |
@@ -211,7 +111,7 @@ Microservicio de reportes administrativos.
 | GET    | /users/{userId}/roles       | Ver roles de un usuario            | Sí (Admin)    |
 | GET    | /users/by-role/{roleName}   | Ver usuarios por role              | Sí (Admin)    |
 
-#### Registrar usuario (`/auth/register`) — Form-Data
+#### Registrar usuario — Form-Data
 ```json
 {
   "name": "nombre",
@@ -223,17 +123,7 @@ Microservicio de reportes administrativos.
 }
 ```
 
-#### Verificar email (`/auth/verify-email`) — JSON
-```json
-{ "token": "token_que_llego_al_correo" }
-```
-
-#### Reenviar verificación (`/auth/resend-verification`) — JSON
-```json
-{ "email": "correo@ejemplo.com" }
-```
-
-#### Login (`/auth/login`) — JSON
+#### Login — JSON
 ```json
 {
   "emailOrUsername": "usuario_o_correo",
@@ -241,29 +131,29 @@ Microservicio de reportes administrativos.
 }
 ```
 
-#### Solicitar reset (`/auth/forgot-password`) — JSON
-```json
-{ "email": "correo@ejemplo.com" }
-```
-
-#### Confirmar reset (`/auth/reset-password`) — JSON
-```json
-{
-  "token": "token_que_llego_al_correo",
-  "newPassword": "nueva_password"
-}
-```
-
-#### Actualizar role (`/users/{userId}/role`) — JSON
-- Headers: `Authorization: Bearer <token_admin>`
-```json
-{ "roleName": "ADMIN_ROLE" }
-```
-
 ---
 
-### AccountService
-**Base URL:** `http://localhost:3021/paySmart/v1`
+## AccountService
+
+Microservicio de gestión de cuentas bancarias.
+
+### Funcionalidades
+
+- Crear cuentas y asociarlas a un usuario autenticado (sin duplicados por tipo).
+- Generar números de cuenta aleatorios de 18 dígitos.
+- Consultar todas las cuentas de un usuario.
+- Consultar saldo disponible de una cuenta específica.
+- Validaciones de saldo mínimo según tipo de cuenta (Ahorro: Q100, Monetaria: Q200, Empresarial: Q1000).
+- Endpoints internos para comunicación entre microservicios.
+
+### Tecnologías
+
+- Backend: **Node.js + Express**
+- Base de Datos: **MongoDB** (`account-PS`)
+- Seguridad: JWT, rate limiting, express-validator
+
+### Endpoints
+**Base URL:** `http://localhost:3001/paySmart/v1`
 
 | Método | Ruta                                      | Descripción                    | Authorization |
 |--------|-------------------------------------------|--------------------------------|:-------------:|
@@ -274,7 +164,7 @@ Microservicio de reportes administrativos.
 | GET    | /account/internal/:accountNumber/balance  | Consultar cuenta (interno)     | No            |
 | PATCH  | /account/internal/:accountNumber/balance  | Actualizar saldo (interno)     | No            |
 
-#### Crear cuenta (`/account`) — JSON
+#### Crear cuenta — JSON
 - Headers: `Authorization: Bearer <token>`
 ```json
 {
@@ -284,18 +174,33 @@ Microservicio de reportes administrativos.
 }
 ```
 
-#### Actualizar saldo interno (`/account/internal/:accountNumber/balance`) — JSON
-```json
-{
-  "amount": 100,
-  "type": "DEPOSIT | WITHDRAW"
-}
-```
-
 ---
 
-### TransactionService
-**Base URL:** `http://localhost:3030/paySmart/v1`
+## TransactionService
+
+Microservicio de gestión de transacciones bancarias.
+
+### Funcionalidades
+
+- Depósitos en cuentas de usuario.
+- Transferencias entre cuentas con validación de saldo y límites (Q2,000 por transacción / Q10,000 diarios).
+- Compras de productos mediante descuento de saldo.
+- Reversión de depósitos dentro del primer minuto.
+- Validaciones: montos negativos, transferencia a la misma cuenta, doble reversión.
+- Registro completo de cada transacción (saldo anterior, saldo nuevo, estado).
+- Historial de movimientos por cuenta y últimos 5 registros.
+- Notificación por email (solo si no se revierten).
+- Rollback automático si falla el depósito en cuenta destino.
+
+### Tecnologías
+
+- Backend: **Node.js + Express**
+- Base de Datos: **MongoDB** (`transaction-PS`)
+- HTTP requests: **Axios**
+- Emails: SMTP con Nodemailer
+
+### Endpoints
+**Base URL:** `http://localhost:3002/paySmart/v1`
 
 | Método | Ruta                                                  | Descripción                        | Authorization |
 |--------|-------------------------------------------------------|------------------------------------|:-------------:|
@@ -307,9 +212,9 @@ Microservicio de reportes administrativos.
 | GET    | /transaction/:accountNumber                           | Historial de movimientos           | Sí            |
 | GET    | /transaction/:accountNumber/last                      | Últimos 5 movimientos              | Sí            |
 | GET    | /transaction/internal/stats/accounts-most-movements   | Cuentas con más movimientos        | Sí            |
-| GET    | /transaction/internal/admin/accounts-overview         | Resumen de cuentas                 | Sí            |
+| GET    | /transaction/internal/admin/accounts-overview         | Resumen de cuentas                 | Sí (Admin)    |
 
-#### Depósito (`/transaction/deposit`) — JSON
+#### Depósito — JSON
 - Headers: `Authorization: Bearer <token>`
 ```json
 {
@@ -319,7 +224,7 @@ Microservicio de reportes administrativos.
 }
 ```
 
-#### Transferencia (`/transaction/transfer`) — JSON
+#### Transferencia — JSON
 - Headers: `Authorization: Bearer <token>`
 ```json
 {
@@ -330,73 +235,100 @@ Microservicio de reportes administrativos.
 }
 ```
 
-#### Compra (`/transaction/purchase`) — JSON
-- Headers: `Authorization: Bearer <token>`
-```json
-{
-  "accountNumber": "123456789012345678",
-  "amount": 150,
-  "description": "Compra de producto"
-}
-```
-
 ---
 
-### ProductService
-**Base URL:** `http://localhost:3009/paySmart/v1`
+## ProductService
 
-| Método | Ruta                    | Descripción                  | Authorization |
-|--------|-------------------------|------------------------------|:-------------:|
-| GET    | /health                 | Verificar salud del servidor | No            |
-| POST   | /product                | Crear producto               | Sí (Admin)    |
-| GET    | /product                | Obtener todos los productos  | Sí (Admin)    |
-| GET    | /product/available/list | Obtener productos activos    | Sí            |
-| GET    | /product/:id            | Obtener producto por ID      | Sí (Admin)    |
-| PATCH  | /product/:id            | Actualizar producto          | Sí (Admin)    |
-| DELETE | /product/:id            | Desactivar producto          | Sí (Admin)    |
-| POST   | /purchase               | Realizar una compra          | Sí            |
-| GET    | /purchase/my            | Ver mis compras              | Sí            |
-| GET    | /purchase               | Ver todas las compras        | Sí (Admin)    |
-| GET    | /purchase/:id           | Ver compra por ID            | Sí (Admin)    |
+Microservicio de gestión de productos disponibles para compra.
 
-#### Crear producto (`/product`) — JSON
+### Funcionalidades
+
+- CRUD completo de productos (solo ADMIN).
+- Activación y desactivación lógica de productos.
+- Consulta de productos disponibles para clientes.
+- Control de stock por producto (null = ilimitado).
+- Registro de compras con integración al TransactionService.
+
+### Tecnologías
+
+- Backend: **Node.js + Express**
+- Base de Datos: **MongoDB** (`product-PS`)
+- Seguridad: JWT, validación de roles (ADMIN_ROLE)
+
+### Endpoints
+**Base URL:** `http://localhost:3003/paySmart/v1`
+
+| Método | Ruta                       | Descripción                  | Authorization |
+|--------|----------------------------|------------------------------|:-------------:|
+| GET    | /health                    | Verificar salud del servidor | No            |
+| POST   | /products                  | Crear producto               | Sí (Admin)    |
+| GET    | /products                  | Obtener todos los productos  | Sí (Admin)    |
+| GET    | /products/available/list   | Obtener productos activos    | Sí            |
+| GET    | /products/:id              | Obtener producto por ID      | Sí (Admin)    |
+| PATCH  | /products/:id              | Actualizar producto          | Sí (Admin)    |
+| DELETE | /products/:id              | Desactivar producto          | Sí (Admin)    |
+| PATCH  | /products/:id/activate     | Activar producto             | Sí (Admin)    |
+| POST   | /purchases                 | Realizar una compra          | Sí            |
+| GET    | /purchases/my              | Ver mis compras              | Sí            |
+| GET    | /purchases                 | Ver todas las compras        | Sí (Admin)    |
+| GET    | /purchases/:id             | Ver compra por ID            | Sí (Admin)    |
+
+#### Crear producto — JSON
 - Headers: `Authorization: Bearer <token_admin>`
 ```json
 {
   "name": "Nombre del producto",
+  "description": "Descripción",
   "price": 99.99,
-  "stock": 50,
-  "currency": "GTQ"
+  "type": "PRODUCT | SERVICE",
+  "stock": 50
 }
 ```
 
-#### Realizar compra (`/purchase`) — JSON
+#### Realizar compra — JSON
 - Headers: `Authorization: Bearer <token>`
 ```json
 {
   "product": "id_del_producto",
-  "quantity": 2,
+  "quantity": 1,
   "fromAccountNumber": "123456789012345678"
 }
 ```
 
 ---
 
-### FavoriteAccountService
-**Base URL:** `http://localhost:3035/paySmart/v1`
+## FavoriteAccountService
 
-| Método | Ruta                     | Descripción                     | Authorization |
-|--------|--------------------------|---------------------------------|:-------------:|
-| GET    | /health                  | Verificar salud del servidor    | No            |
-| POST   | /favorite                | Agregar cuenta favorita         | Sí            |
-| GET    | /favorite                | Listar cuentas favoritas        | Sí            |
-| PUT    | /favorite/:id            | Editar alias                    | Sí            |
-| DELETE | /favorite/:id            | Eliminar cuenta favorita        | Sí            |
-| PATCH  | /favorite/:id/deactivate | Desactivar cuenta favorita      | Sí            |
-| PATCH  | /favorite/:id/activate   | Activar cuenta favorita         | Sí            |
-| POST   | /favorite/:id/transfer   | Transferencia rápida a favorita | Sí            |
+Microservicio para gestionar cuentas bancarias favoritas.
 
-#### Agregar favorita (`/favorite`) — JSON
+### Funcionalidades
+
+- Agregar cuentas favoritas de otros usuarios con alias.
+- Listar, editar alias y eliminar cuentas favoritas (soft-delete).
+- Activar y desactivar cuentas favoritas independientemente del soft-delete.
+- Transferencia rápida a cuenta favorita directamente desde el servicio.
+
+### Tecnologías
+
+- Backend: **Node.js + Express**
+- Base de Datos: **MongoDB** (`favorite-PS`)
+- Comunicación con AccountService y TransactionService vía Axios
+
+### Endpoints
+**Base URL:** `http://localhost:3004/paySmart/v1`
+
+| Método | Ruta                              | Descripción                     | Authorization |
+|--------|-----------------------------------|---------------------------------|:-------------:|
+| GET    | /health                           | Verificar salud del servidor    | No            |
+| POST   | /favoriteAccounts                 | Agregar cuenta favorita         | Sí            |
+| GET    | /favoriteAccounts                 | Listar cuentas favoritas        | Sí            |
+| PUT    | /favoriteAccounts/:id             | Editar alias                    | Sí            |
+| DELETE | /favoriteAccounts/:id             | Eliminar cuenta favorita        | Sí            |
+| PATCH  | /favoriteAccounts/:id/deactivate  | Desactivar cuenta favorita      | Sí            |
+| PATCH  | /favoriteAccounts/:id/activate    | Activar cuenta favorita         | Sí            |
+| POST   | /favoriteAccounts/:id/transfer    | Transferencia rápida            | Sí            |
+
+#### Agregar favorita — JSON
 - Headers: `Authorization: Bearer <token>`
 ```json
 {
@@ -405,7 +337,7 @@ Microservicio de reportes administrativos.
 }
 ```
 
-#### Transferencia rápida (`/favorite/:id/transfer`) — JSON
+#### Transferencia rápida — JSON
 - Headers: `Authorization: Bearer <token>`
 ```json
 {
@@ -417,14 +349,29 @@ Microservicio de reportes administrativos.
 
 ---
 
-### ReportService
-**Base URL:** `http://localhost:3040/paySmart/v1`
+## ReportService
+
+Microservicio de reportes administrativos. No tiene base de datos propia, consume el TransactionService.
+
+### Funcionalidades
+
+- Reporte de cuentas con más movimientos (ordenable ASC/DESC, con límite configurable).
+- Reporte de resumen administrativo de cuentas con sus últimos movimientos.
+
+### Tecnologías
+
+- Backend: **Node.js + Express**
+- Seguridad: JWT
+- Comunicación con TransactionService vía Axios
+
+### Endpoints
+**Base URL:** `http://localhost:3005/paySmart/v1`
 
 | Método | Ruta                             | Descripción                       | Authorization |
 |--------|----------------------------------|-----------------------------------|:-------------:|
 | GET    | /health                          | Verificar salud del servidor      | No            |
 | GET    | /reports/accounts-most-movements | Cuentas con más movimientos       | Sí            |
-| GET    | /reports/admin/accounts-overview | Resumen administrativo de cuentas | Sí            |
+| GET    | /reports/admin/accounts-overview | Resumen administrativo de cuentas | Sí (Admin)    |
 
 #### Cuentas con más movimientos — Query Params
 - Headers: `Authorization: Bearer <token>`
