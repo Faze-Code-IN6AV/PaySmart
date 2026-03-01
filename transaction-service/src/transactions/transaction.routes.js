@@ -1,22 +1,23 @@
 'use strict';
 
 import { Router } from 'express';
-import { depositController, purchaseTransactionController, reverseDepositController, listTransactionsController, listLastTransactionsController, accountsAdminOverviewController} from './transaction.controller.js';
-import { transferController, accountMostMovementsController } from './transaction.controller.js';
-import { middleware } from '../../middlewares/validate-JWT.js';
+import { depositController, reverseDepositController, transferController, purchaseTransactionController, listTransactionsController, listLastTransactionsController, accountMostMovementsController, accountsAdminOverviewController } from './transaction.controller.js';
+import { validateJWT } from '../../middlewares/validate-JWT.js';
 
 const router = Router();
 
-router.post('/deposit', middleware, depositController);
-router.post('/transfer', middleware, transferController);
-router.post('/purchase', middleware, purchaseTransactionController);
-router.put('/reverse/:transactionId', middleware, reverseDepositController);
+// Rutas de transacciones
+router.post('/deposit', validateJWT, depositController);
+router.post('/transfer', validateJWT, transferController);
+router.post('/purchase', validateJWT, purchaseTransactionController);
+router.put('/reverse/:transactionId', validateJWT, reverseDepositController);
 
-router.get('/internal/stats/accounts-most-movements', middleware, accountMostMovementsController);
+// Rutas internas - deben ir ANTES de /:accountNumber para que Express no las confunda
+router.get('/internal/stats/accounts-most-movements', validateJWT, accountMostMovementsController);
+router.get('/internal/admin/accounts-overview', validateJWT, accountsAdminOverviewController);
 
-router.get('/:accountNumber', middleware, listTransactionsController);
-router.get('/:accountNumber/last', middleware, listLastTransactionsController);
-
-router.get('/internal/admin/accounts-overview', middleware,accountsAdminOverviewController);
+// Rutas de historial
+router.get('/:accountNumber', validateJWT, listTransactionsController);
+router.get('/:accountNumber/last', validateJWT, listLastTransactionsController);
 
 export default router;

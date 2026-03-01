@@ -13,7 +13,7 @@ import transactionRoutes from '../src/transactions/transaction.routes.js';
 
 const BASE_PATH = '/paySmart/v1'
 
-const middleware = (app) => {
+const middlewares = (app) => {
     app.use(express.urlencoded({ extended: false, limit: '10mb' }));
     app.use(express.json({ limit: '10mb' }));
     app.use(cors(corsOptions));
@@ -28,34 +28,35 @@ const routes = (app) => {
     app.get(`${BASE_PATH}/health`, (req, res) => {
         res.status(200).json({
             status: 'healthy',
-            service: 'PaySmart Admin Server'
+            service: 'PaySmart Transaction Service'
         });
     });
 
-    app.get ((req, res) => {
+    // Ruta no encontrada
+    app.use((req, res) => {
         res.status(404).json({
             success: false,
-            message: 'Ruta no existente en el servidor de PaySmart Admin'
+            message: 'Ruta no encontrada'
         });
     });
 }
 
-export const initServer = async() => {
+export const initServer = async () => {
     const app = express();
     const PORT = process.env.PORT;
-    app.set('true proxy', 1);
+    app.set('trust proxy', 1);
 
     try {
         await dbConnection();
-        middleware(app);
+        middlewares(app);
         routes(app);
 
         app.use(errorHandler);
         app.listen(PORT, () => {
-            console.log(`PaySmart's Admin Server running on port: ${PORT}`);
+            console.log(`PaySmart's Transaction Service running on port: ${PORT}`);
             console.log(`Health Check: http://localhost:${PORT}${BASE_PATH}/health`);
         });
-    }catch(err){
+    } catch (err) {
         console.error(`Error al iniciar el servidor: ${err.message}`);
         process.exit(1);
     }
