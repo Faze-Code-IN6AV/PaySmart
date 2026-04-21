@@ -1,7 +1,5 @@
-import { AppRouter } from './router/AppRouter'
+import { AuthPage } from '../features/auth/pages/AuthPage.jsx'
 
-export const App = () => {
-  return (
-    <AppRouter />
-  )
+export default function App() {
+  return <AuthPage />
 }
