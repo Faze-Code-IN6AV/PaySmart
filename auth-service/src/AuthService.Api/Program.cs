@@ -81,19 +81,6 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-// Health endpoints
-app.MapHealthChecks("/health");
-app.MapGet("/health", () =>
-{
-    var response = new
-    {
-        status = "Saludable",
-        timestamp = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ")
-    };
-    return Results.Ok(response);
-});
-app.MapHealthChecks("/api/v1/health");
-
 // Startup logging
 var startupLogger = app.Services.GetRequiredService<ILogger<Program>>();
 app.Lifetime.ApplicationStarted.Register(() =>
