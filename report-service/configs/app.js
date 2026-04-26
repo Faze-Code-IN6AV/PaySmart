@@ -9,6 +9,7 @@ import { helmetOptions } from './helmet.configuration.js';
 import { requestLimit } from './rateLimit.configuration.js';
 import { errorHandler } from '../middlewares/handle-errors.js';
 import reportRoutes from '../src/reports/report.routes.js';
+import { setupSwagger } from '../swagger.js';
 
 const BASE_PATH = '/paySmart/v1';
 
@@ -31,7 +32,6 @@ const routes = (app) => {
         });
     });
 
-    // Ruta no encontrada
     app.use((req, res) => {
         res.status(404).json({
             success: false,
@@ -43,11 +43,11 @@ const routes = (app) => {
 export const initServer = async () => {
     const app = express();
     const PORT = process.env.PORT;
-
     app.set('trust proxy', 1);
 
     try {
         middlewares(app);
+        setupSwagger(app, BASE_PATH);
         routes(app);
 
         app.use(errorHandler);
@@ -55,6 +55,7 @@ export const initServer = async () => {
         app.listen(PORT, () => {
             console.log(`PaySmart's Report Service running on port: ${PORT}`);
             console.log(`Health Check: http://localhost:${PORT}${BASE_PATH}/health`);
+            console.log(`Swagger: http://localhost:${PORT}${BASE_PATH}/docs`);
         });
     } catch (err) {
         console.error(`Error al iniciar el servidor: ${err.message}`);
