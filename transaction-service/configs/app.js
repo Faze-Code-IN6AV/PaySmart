@@ -10,6 +10,7 @@ import { helmetOptions } from './helmet.configuration.js';
 import { requestLimit } from './rateLimit.configuration.js';
 import { errorHandler } from '../middlewares/handle-errors.js';
 import transactionRoutes from '../src/transactions/transaction.routes.js';
+import { setupSwagger } from '../swagger.js';
 
 const BASE_PATH = '/paySmart/v1'
 
@@ -32,7 +33,6 @@ const routes = (app) => {
         });
     });
 
-    // Ruta no encontrada
     app.use((req, res) => {
         res.status(404).json({
             success: false,
@@ -49,12 +49,14 @@ export const initServer = async () => {
     try {
         await dbConnection();
         middlewares(app);
+        setupSwagger(app, BASE_PATH);
         routes(app);
 
         app.use(errorHandler);
         app.listen(PORT, () => {
             console.log(`PaySmart's Transaction Service running on port: ${PORT}`);
             console.log(`Health Check: http://localhost:${PORT}${BASE_PATH}/health`);
+            console.log(`Swagger: http://localhost:${PORT}${BASE_PATH}/docs`);
         });
     } catch (err) {
         console.error(`Error al iniciar el servidor: ${err.message}`);

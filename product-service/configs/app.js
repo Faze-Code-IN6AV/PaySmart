@@ -14,6 +14,7 @@ import { errorHandler } from '../middlewares/handle-errors.js';
 
 import productRoutes from '../src/product/product.routes.js';
 import purchaseRoutes from '../src/purchase/purchase.routes.js';
+import { setupSwagger } from '../swagger.js';
 
 const BASE_PATH = '/paySmart/v1';
 
@@ -41,15 +42,13 @@ const routes = (app) => {
 export const initServer = async () => {
 
     const app = express();
-
     const PORT = process.env.PORT || 3000;
-
     app.set('trust proxy', 1);
 
     try {
         await dbConnection();
-
         middlewares(app);
+        setupSwagger(app, BASE_PATH);
         routes(app);
 
         app.use(errorHandler);
@@ -57,6 +56,7 @@ export const initServer = async () => {
         app.listen(PORT, () => {
             console.log(`Product Service running on port: ${PORT}`);
             console.log(`Health Check: http://localhost:${PORT}${BASE_PATH}/health`);
+            console.log(`Swagger: http://localhost:${PORT}${BASE_PATH}/docs`);
         });
 
     } catch (err) {
