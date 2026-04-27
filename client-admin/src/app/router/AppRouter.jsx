@@ -3,33 +3,39 @@ import { AuthPage } from '../../features/auth/pages/AuthPage.jsx';
 import { VerifyEmailPage } from '../../features/auth/pages/VerifyEmailPage.jsx';
 import { ResetPasswordPage } from '../../features/auth/pages/ResetPasswordPage.jsx';
 import { ProtectedRoute } from './ProtectedRoute.jsx';
-// import { RoleGuard } from './RoleGuard.jsx';
-// import { DashboardPage } from '../layouts/DashboardPage.jsx';
+import { DashboardLayout } from '../layouts/DashboardLayout.jsx';
+import { AccountPage } from '../../features/account/pages/AccountPage.jsx';
 
 export const AppRouter = () => {
   return (
     <Routes>
-      {/* Rutas públicas de auth */}
+      {/* Rutas públicas */}
       <Route path='/' element={<AuthPage />} />
       <Route path='/verify-email' element={<VerifyEmailPage />} />
       <Route path='/reset-password' element={<ResetPasswordPage />} />
 
-      {/* Rutas protegidas — descomenta y agrega tus layouts cuando los tengas */}
+      {/* Rutas protegidas */}
       <Route
-        path='/dashboard/*'
+        path='/dashboard'
         element={
           <ProtectedRoute>
-            {/* Ejemplo de cómo separar vistas por rol dentro del mismo dashboard:
-                <RoleGuard allowedRoles={['ADMIN_ROLE', 'USER_ROLE']}>
-                  <DashboardPage />
-                </RoleGuard>
-            */}
-            <div style={{ color: '#fff', padding: 40 }}>Dashboard — en construcción 🚧</div>
+            <DashboardLayout />
           </ProtectedRoute>
         }
-      />
+      >
+        <Route
+          index
+          element={
+            <div className='flex flex-col items-center justify-center h-64'>
+              <p className='text-lg font-semibold' style={{ color: 'rgba(255,255,255,0.5)' }}>
+                Dashboard — en construcción 
+              </p>
+            </div>
+          }
+        />
+        <Route path='accounts' element={<AccountPage />} />
+      </Route>
 
-      {/* Fallback */}
       <Route path='*' element={<Navigate to='/' replace />} />
     </Routes>
   );
