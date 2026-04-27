@@ -1,3 +1,4 @@
-export * from "./auth";
-export * from "./admin";
-export * from "./api";
+// Exporta todos los servicios desde un solo lugar
+export * from './auth';
+export * from './admin';
+export * from './api';
