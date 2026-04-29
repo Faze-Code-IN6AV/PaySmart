@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 
@@ -8,17 +7,7 @@ const ACCOUNT_TYPES = [
   { value: 'EMPRESARIAL', label: 'Empresarial', minBalance: 1000, description: 'Saldo mínimo: Q1,000.00' },
 ];
 
-/**
- * CreateAccountModal
- * Props:
- *   isOpen: boolean
- *   onClose: () => void
- *   onSubmit: (data) => Promise<void>  — se llamará con { accountType, balance }
- *   loading: boolean
- */
 export const CreateAccountModal = ({ isOpen, onClose, onSubmit, loading = false }) => {
-  const [selectedType, setSelectedType] = useState(null);
-
   const {
     register,
     handleSubmit,
@@ -32,14 +21,12 @@ export const CreateAccountModal = ({ isOpen, onClose, onSubmit, loading = false 
 
   const handleClose = () => {
     reset();
-    setSelectedType(null);
     onClose();
   };
 
   const handleFormSubmit = async (data) => {
-    await onSubmit({ accountType: data.accountType, balance: Number(data.balance) });
-    reset();
-    setSelectedType(null);
+    const res = await onSubmit({ accountType: data.accountType, balance: Number(data.balance) });
+    if (res?.success) reset();
   };
 
   if (!isOpen) return null;
@@ -51,7 +38,7 @@ export const CreateAccountModal = ({ isOpen, onClose, onSubmit, loading = false 
       onClick={(e) => e.target === e.currentTarget && handleClose()}
     >
       <div
-        className='w-full max-w-md rounded-2xl shadow-2xl animate-fadeIn'
+        className='w-full max-w-md rounded-2xl shadow-2xl'
         style={{ backgroundColor: '#162C5F', border: '1px solid #41D2F2' }}
       >
         {/* Header */}
@@ -67,18 +54,13 @@ export const CreateAccountModal = ({ isOpen, onClose, onSubmit, loading = false 
               Selecciona el tipo y el saldo inicial en Quetzales
             </p>
           </div>
-          <button
-            onClick={handleClose}
-            className='p-1.5 rounded-lg transition-colors hover:opacity-70'
-            style={{ color: '#41D2F2' }}
-          >
+          <button onClick={handleClose} className='p-1.5 rounded-lg hover:opacity-70' style={{ color: '#41D2F2' }}>
             <XMarkIcon className='w-5 h-5' />
           </button>
         </div>
 
-        {/* Body */}
         <form onSubmit={handleSubmit(handleFormSubmit)} className='px-6 py-5 space-y-5'>
-          {/* Tipo de cuenta — tarjetas */}
+          {/* Tipo de cuenta */}
           <div>
             <label className='block text-sm font-medium mb-3' style={{ color: '#FFFFFF' }}>
               Tipo de cuenta
@@ -101,10 +83,7 @@ export const CreateAccountModal = ({ isOpen, onClose, onSubmit, loading = false 
                       className='sr-only'
                       {...register('accountType', { required: 'Selecciona un tipo de cuenta' })}
                     />
-                    <div
-                      className='font-semibold text-sm mb-1'
-                      style={{ color: isSelected ? '#41D2F2' : '#FFFFFF' }}
-                    >
+                    <div className='font-semibold text-sm mb-1' style={{ color: isSelected ? '#41D2F2' : '#FFFFFF' }}>
                       {type.label}
                     </div>
                     <div className='text-xs' style={{ color: isSelected ? '#FFE968' : 'rgba(255,255,255,0.5)' }}>
@@ -125,23 +104,15 @@ export const CreateAccountModal = ({ isOpen, onClose, onSubmit, loading = false 
               Saldo inicial (GTQ)
             </label>
             <div className='relative'>
-              <span
-                className='absolute left-3 top-1/2 -translate-y-1/2 text-sm font-semibold'
-                style={{ color: '#41D2F2' }}
-              >
+              <span className='absolute left-3 top-1/2 -translate-y-1/2 text-sm font-semibold' style={{ color: '#41D2F2' }}>
                 Q
               </span>
               <input
                 type='number'
                 step='0.01'
                 placeholder={currentType ? `Mín. ${currentType.minBalance}.00` : '0.00'}
-                className='w-full pl-8 pr-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2'
-                style={{
-                  backgroundColor: '#0B1830',
-                  borderColor: '#41D2F2',
-                  color: '#FFFFFF',
-                  '--tw-ring-color': '#41D2F2',
-                }}
+                className='w-full pl-8 pr-3 py-2 text-sm border rounded-lg focus:outline-none'
+                style={{ backgroundColor: '#0B1830', borderColor: '#41D2F2', color: '#FFFFFF' }}
                 {...register('balance', {
                   required: 'El saldo inicial es requerido',
                   min: {
@@ -156,7 +127,7 @@ export const CreateAccountModal = ({ isOpen, onClose, onSubmit, loading = false 
             )}
           </div>
 
-          {/* Info chip de moneda */}
+          {/* Chip moneda */}
           <div
             className='flex items-center gap-2 px-3 py-2 rounded-lg text-xs'
             style={{ backgroundColor: 'rgba(255,233,104,0.08)', border: '1px solid rgba(255,233,104,0.25)', color: '#FFE968' }}
@@ -170,7 +141,7 @@ export const CreateAccountModal = ({ isOpen, onClose, onSubmit, loading = false 
             <button
               type='button'
               onClick={handleClose}
-              className='flex-1 py-2.5 rounded-lg text-sm font-medium transition-opacity hover:opacity-70'
+              className='flex-1 py-2.5 rounded-lg text-sm font-medium hover:opacity-70'
               style={{ backgroundColor: 'rgba(65,210,242,0.1)', color: '#41D2F2', border: '1px solid rgba(65,210,242,0.3)' }}
             >
               Cancelar
@@ -178,7 +149,7 @@ export const CreateAccountModal = ({ isOpen, onClose, onSubmit, loading = false 
             <button
               type='submit'
               disabled={loading}
-              className='flex-1 py-2.5 rounded-lg text-sm font-bold transition-opacity disabled:opacity-60'
+              className='flex-1 py-2.5 rounded-lg text-sm font-bold disabled:opacity-60'
               style={{ backgroundColor: '#41D2F2', color: '#0B1830' }}
             >
               {loading ? 'Creando...' : 'Crear Cuenta'}
