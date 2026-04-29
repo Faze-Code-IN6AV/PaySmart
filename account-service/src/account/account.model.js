@@ -54,6 +54,12 @@ const accountSchema = new Schema(
             },
             default: 'ACTIVO'
         },
+        email: {
+            type: String,
+            required: true,
+            trim: true,
+            lowercase: true
+        }
     },
     {
         timestamps: true,

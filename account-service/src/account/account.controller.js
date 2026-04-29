@@ -1,4 +1,14 @@
-import { createAccountRecord, getAccountsByUser, getAccountBalance } from './account.service.js';
+'use strict';
+
+import { 
+    createAccountRecord, 
+    getAccountsByUser, 
+    getAccountBalance,
+    getAccountsByEmail,
+    deactivateAccountRecord,
+    activateAccountRecord,
+    suspendAccountRecord
+} from './account.service.js';
 import Account from './account.model.js';
 
 // Crear una nueva cuenta bancaria asociada al usuario autenticado
@@ -7,7 +17,8 @@ export const createAccount = async (req, res) => {
         const account = await createAccountRecord({
             accountData: {
                 ...req.body,
-                userId: req.user.id
+                userId: req.user.id,
+                email: req.user.email
             }
         });
 
@@ -92,7 +103,6 @@ export const getBalanceInternal = async (req, res) => {
 };
 
 // Actualizar saldo de una cuenta (uso interno entre microservicios)
-// Soporta DEPOSIT para sumar y WITHDRAW para restar
 export const updateBalanceInternal = async (req, res) => {
     try {
         let { amount, type } = req.body;
@@ -142,6 +152,96 @@ export const updateBalanceInternal = async (req, res) => {
         res.status(400).json({
             success: false,
             message: err.message
+        });
+    }
+};
+
+// Obtener cuentas de un usuario por email — solo ADMIN_ROLE
+export const getAccountsByEmailController = async (req, res) => {
+    try {
+        const { email } = req.params;
+
+        const accounts = await getAccountsByEmail(email);
+
+        if (!accounts || accounts.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'No se encontraron cuentas para ese usuario',
+                error: 'USER_ACCOUNTS_NOT_FOUND'
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            data: accounts
+        });
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            message: err.message
+        });
+    }
+};
+
+// Eliminar (cerrar) una cuenta — solo ADMIN_ROLE
+export const deactivateAccount = async (req, res) => {
+    try {
+        const { accountNumber } = req.params;
+
+        const account = await deactivateAccountRecord(accountNumber);
+
+        res.status(200).json({
+            success: true,
+            message: 'Cuenta eliminada exitosamente.',
+            data: account
+        });
+    } catch (err) {
+        res.status(400).json({
+            success: false,
+            message: 'Error al eliminar la cuenta.',
+            error: err.message
+        });
+    }
+};
+
+// Activar una cuenta suspendida — solo ADMIN_ROLE
+export const activateAccount = async (req, res) => {
+    try {
+        const { accountNumber } = req.params;
+
+        const account = await activateAccountRecord(accountNumber);
+
+        res.status(200).json({
+            success: true,
+            message: 'Cuenta activada exitosamente.',
+            data: account
+        });
+    } catch (err) {
+        res.status(400).json({
+            success: false,
+            message: 'Error al activar la cuenta.',
+            error: err.message
+        });
+    }
+};
+
+// Suspender una cuenta — solo ADMIN_ROLE
+export const suspendAccount = async (req, res) => {
+    try {
+        const { accountNumber } = req.params;
+
+        const account = await suspendAccountRecord(accountNumber);
+
+        res.status(200).json({
+            success: true,
+            message: 'Cuenta suspendida exitosamente.',
+            data: account
+        });
+    } catch (err) {
+        res.status(400).json({
+            success: false,
+            message: 'Error al suspender la cuenta.',
+            error: err.message
         });
     }
 };
