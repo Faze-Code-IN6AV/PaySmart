@@ -44,3 +44,15 @@ export const showInfo = (message) => {
     iconTheme: { primary: '#fff', secondary: '#162C5F' },
   });
 };
+
+export const showWarning = (message) => {
+  toast(message, {
+    icon: '⚠️',
+    style: {
+      ...baseStyle,
+      background: 'linear-gradient(90deg, #FFE968 0%, #f59e0b 100%)',
+      color: '#0B1830',
+      border: '2px solid #FFE968',
+    },
+  });
+};
