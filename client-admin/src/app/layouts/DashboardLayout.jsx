@@ -1,13 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
-import {
-  CreditCardIcon,
-  ArrowRightStartOnRectangleIcon,
-  Bars3Icon,
-  XMarkIcon,
-  ShieldCheckIcon,
-  HomeIcon,
-} from '@heroicons/react/24/outline';
+import { CreditCardIcon, ArrowRightStartOnRectangleIcon, Bars3Icon, XMarkIcon, ShieldCheckIcon, HomeIcon,} from '@heroicons/react/24/outline';
 import { useAuthStore } from '../../features/auth/store/authStore.js';
 import logo from '../../assets/img/paysmart_logo.png';
 
@@ -131,8 +124,8 @@ export const DashboardLayout = () => {
 const SidebarContent = ({ user, isAdmin, navItems, isActive, navigate, onLogout }) => (
   <div className='flex flex-col h-full'>
     {/* Logo */}
-    <div className='px-5 py-5 flex items-center gap-3' style={{ borderBottom: '1px solid rgba(65,210,242,0.1)' }}>
-      <img src={logo} alt='PaySmart' className='h-25 w-auto object-contain' />
+    <div className='px-5 py-5 flex justify-center items-center gap-3' style={{ borderBottom: '1px solid rgba(65,210,242,0.1)' }}>
+      <img src={logo} alt='PaySmart' className='h-20 w-auto object-contain' />
     </div>
 
     {/* User card */}

@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { login as loginRequest, register as registerRequest } from '../../../shared/api';
 import { showError } from '../../../shared/utils/toast.js';
+import { useAccountStore } from '../../account/store/accountStore.js';
 
 const ALLOWED_ROLES = ['ADMIN_ROLE', 'USER_ROLE'];
 
@@ -47,6 +48,7 @@ export const useAuthStore = create(
           expiresAt: null,
           isAuthenticated: false,
         });
+        useAccountStore.getState().clearSearch();
       },
 
       login: async ({ emailOrUsername, password }) => {

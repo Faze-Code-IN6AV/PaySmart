@@ -9,12 +9,12 @@ import { AccountPage } from '../../features/account/pages/AccountPage.jsx';
 export const AppRouter = () => {
   return (
     <Routes>
-      {/* Rutas públicas */}
+      {/* Rutas públicas de auth */}
       <Route path='/' element={<AuthPage />} />
       <Route path='/verify-email' element={<VerifyEmailPage />} />
       <Route path='/reset-password' element={<ResetPasswordPage />} />
 
-      {/* Rutas protegidas */}
+      {/* Rutas protegidas dentro del DashboardLayout */}
       <Route
         path='/dashboard'
         element={
@@ -23,6 +23,7 @@ export const AppRouter = () => {
           </ProtectedRoute>
         }
       >
+        {/* /dashboard — índice temporal */}
         <Route
           index
           element={
@@ -30,12 +31,18 @@ export const AppRouter = () => {
               <p className='text-lg font-semibold' style={{ color: 'rgba(255,255,255,0.5)' }}>
                 Dashboard — en construcción 
               </p>
+              <p className='text-sm mt-2' style={{ color: 'rgba(255,255,255,0.3)' }}>
+                Selecciona una sección del menú lateral
+              </p>
             </div>
           }
         />
+
+        {/* /dashboard/accounts — AccountPage (ADMIN_ROLE y USER_ROLE) */}
         <Route path='accounts' element={<AccountPage />} />
       </Route>
 
+      {/* Fallback */}
       <Route path='*' element={<Navigate to='/' replace />} />
     </Routes>
   );
