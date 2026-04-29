@@ -5,6 +5,7 @@ import { ResetPasswordPage } from '../../features/auth/pages/ResetPasswordPage.j
 import { ProtectedRoute } from './ProtectedRoute.jsx';
 import { DashboardLayout } from '../layouts/DashboardLayout.jsx';
 import { AccountPage } from '../../features/account/pages/AccountPage.jsx';
+import { TransactionPage } from '../../features/transacton/pages/TransactionPage.jsx';
 
 export const AppRouter = () => {
   return (
@@ -40,6 +41,9 @@ export const AppRouter = () => {
 
         {/* /dashboard/accounts — AccountPage (ADMIN_ROLE y USER_ROLE) */}
         <Route path='accounts' element={<AccountPage />} />
+
+        {/* /dashboard/transactions — future TransactionPage */}
+        <Route path='transactions' element={<TransactionPage />} />
       </Route>
 
       {/* Fallback */}

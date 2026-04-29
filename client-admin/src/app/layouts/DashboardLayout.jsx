@@ -7,6 +7,7 @@ import logo from '../../assets/img/paysmart_logo.png';
 const NAV_ITEMS = [
   { path: '/dashboard', label: 'Inicio', Icon: HomeIcon, exact: true },
   { path: '/dashboard/accounts', label: 'Cuentas', Icon: CreditCardIcon },
+  { path: '/dashboard/transactions', label: 'Transacciones', Icon: CreditCardIcon },
 ];
 
 export const DashboardLayout = () => {
