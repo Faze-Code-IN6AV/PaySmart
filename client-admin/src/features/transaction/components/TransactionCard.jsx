@@ -5,7 +5,7 @@ import {
     ArrowsRightLeftIcon,
     ArrowUturnLeftIcon,
 } from '@heroicons/react/24/outline';
-//import { useTransactionStore } from '../store/transactionStore.js';
+import { useTransactionStore } from '../store/transactionStore.js';
 
 const TYPE_CONFIG = {
     DEPOSIT: {

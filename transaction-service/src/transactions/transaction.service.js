@@ -96,6 +96,10 @@ export const transfer = async (fromAccountNumber, toAccountNumber, amount, descr
     const fromAccount = fromResponse.data;
     const toAccount = toResponse.data;
     if (!fromAccount || !toAccount) throw new Error('Cuenta no encontrada');
+    if (fromAccount.status === 'SUSPENDIDO') throw new Error('Tu cuenta está suspendida y no puede realizar transferencias');
+    if (fromAccount.status === 'CERRADO') throw new Error('Tu cuenta está cerrada y no puede realizar transferencias');
+    if (toAccount.status === 'SUSPENDIDO') throw new Error('La cuenta destino está suspendida y no puede recibir transferencias');
+    if (toAccount.status === 'CERRADO') throw new Error('La cuenta destino está cerrada y no puede recibir transferencias');
     if (fromAccount.balance < amount) throw new Error('Saldo insuficiente');
 
     // Validar límite diario
