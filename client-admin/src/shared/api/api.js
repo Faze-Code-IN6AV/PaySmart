@@ -20,6 +20,12 @@ const axiosAccount = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
+const axiosTransaction = axios.create({
+  baseURL: import.meta.env.VITE_TRANSACTION_URL,
+  timeout: 8000,
+  headers: { 'Content-Type': 'application/json' },
+});
+
 // Interceptores de request — inyectan el token Bearer
 axiosAdmin.interceptors.request.use((config) => {
   config._axiosClient = 'admin';
@@ -37,6 +43,13 @@ axiosAuth.interceptors.request.use((config) => {
 
 axiosAccount.interceptors.request.use((config) => {
   config._axiosClient = 'account';
+  const token = useAuthStore.getState().token;
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
+
+axiosTransaction.interceptors.request.use((config) => {
+  config._axiosClient = 'transaction';
   const token = useAuthStore.getState().token;
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
@@ -78,5 +91,6 @@ const handleResponseError = async (error) => {
 axiosAuth.interceptors.response.use((res) => res, handleResponseError);
 axiosAdmin.interceptors.response.use((res) => res, handleResponseError);
 axiosAccount.interceptors.response.use((res) => res, handleResponseError);
+axiosTransaction.interceptors.response.use((res) => res, handleResponseError);
 
-export { axiosAdmin, axiosAuth, axiosAccount };
+export { axiosAdmin, axiosAuth, axiosAccount, axiosTransaction };
