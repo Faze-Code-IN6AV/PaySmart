@@ -5,7 +5,7 @@ import { ResetPasswordPage } from '../../features/auth/pages/ResetPasswordPage.j
 import { ProtectedRoute } from './ProtectedRoute.jsx';
 import { DashboardLayout } from '../layouts/DashboardLayout.jsx';
 import { AccountPage } from '../../features/account/pages/AccountPage.jsx';
-import { TransactionPage } from '../../features/transacton/pages/TransactionPage.jsx';
+import { TransactionPage } from '../../features/transaction/pages/TransactionPage.jsx';
 
 export const AppRouter = () => {
   return (
