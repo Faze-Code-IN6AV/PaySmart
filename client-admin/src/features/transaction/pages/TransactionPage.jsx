@@ -1,4 +1,7 @@
+import { useState } from 'react';
 import { PlusCircleIcon, ClockIcon, ListBulletIcon, MagnifyingGlassIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
+
+import { useTransaction } from '../hooks/useTransaction.js';
 import { TransactionCard } from '../components/TransactionCard.jsx';
 import { TransactionModal } from '../components/TransactionModal.jsx';
 
@@ -9,21 +12,59 @@ const TYPE_FILTERS = [
     { key: 'TRANSFER', label: 'Transferencias' },
 ];
 
-export const TransactionPage = () => {
-    // Variables estáticas para mantener el diseño UI encendido sin funcionalidad
-    const activeAccount = 'ACC-000123';
-    const accountInput = 'ACC-000123';
-    const view = 'last';
-    const filter = 'TODOS';
-    const showModal = false;
-    const loading = false;
-    const isAdmin = false;
+export const TransactionPage = ({ accountNumber: propAccountNumber }) => {
+    const [accountInput, setAccountInput] = useState(propAccountNumber ?? '');
+    const [activeAccount, setActiveAccount] = useState(propAccountNumber ?? '');
+    const [view, setView] = useState('last');
+    const [filter, setFilter] = useState('TODOS');
+    const [showModal, setShowModal] = useState(false);
+    const [modalLoading, setModalLoading] = useState(false);
 
-    // Arreglo de prueba estático para que se rendericen las tarjetas de diseño
-    const filteredList = [
-        { _id: '1', type: 'DEPOSIT', amount: 100, date: '2026-05-07' },
-        { _id: '2', type: 'TRANSFER', amount: 50, date: '2026-05-06' }
-    ];
+    const {
+        transactions,
+        lastTransactions,
+        loading,
+        error,
+        isAdmin,
+        fetchTransactions,
+        fetchLastTransactions,
+        deposit,
+        transfer,
+        purchase,
+    } = useTransaction(activeAccount);
+
+    const handleSearch = () => {
+        const trimmed = accountInput.trim();
+        if (!trimmed) return;
+        setActiveAccount(trimmed);
+        if (view === 'all') fetchTransactions(trimmed);
+        else fetchLastTransactions(trimmed);
+    };
+
+    const handleViewChange = (v) => {
+        setView(v);
+        if (!activeAccount) return;
+        if (v === 'all') fetchTransactions(activeAccount);
+        else fetchLastTransactions(activeAccount);
+    };
+
+    const handleSubmit = async ({ type, accountNumber, toAccountNumber, amount, description }) => {
+        setModalLoading(true);
+        let res;
+        if (type === 'DEPOSIT') res = await deposit({ accountNumber, amount, description });
+        else if (type === 'TRANSFER') res = await transfer({ fromAccountNumber: accountNumber, toAccountNumber, amount, description });
+        else res = await purchase({ accountNumber, amount, description });
+        setModalLoading(false);
+        if (res?.success) setShowModal(false);
+        return res;
+    };
+
+    const displayList = view === 'all' ? transactions : lastTransactions;
+
+    const filteredList =
+        view === 'all' && filter !== 'TODOS'
+            ? displayList.filter((tx) => tx.type === filter)
+            : displayList;
 
     return (
         <div className='flex flex-col h-full'>
@@ -41,6 +82,7 @@ export const TransactionPage = () => {
 
                 {activeAccount && (
                     <button
+                        onClick={() => setShowModal(true)}
                         className='flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-opacity hover:opacity-80'
                         style={{ backgroundColor: '#41D2F2', color: '#0B1830' }}
                     >
@@ -57,12 +99,14 @@ export const TransactionPage = () => {
                 <MagnifyingGlassIcon className='w-4 h-4 flex-shrink-0' style={{ color: '#41D2F2' }} />
                 <input
                     value={accountInput}
-                    readOnly
+                    onChange={(e) => setAccountInput(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                     placeholder='Número de cuenta (ACC-000123)'
                     className='flex-1 bg-transparent outline-none text-sm'
                     style={{ color: '#FFFFFF' }}
                 />
                 <button
+                    onClick={handleSearch}
                     disabled={!accountInput.trim()}
                     className='px-4 py-1.5 rounded-lg text-xs font-semibold disabled:opacity-40 transition-opacity hover:opacity-80'
                     style={{ backgroundColor: '#41D2F2', color: '#0B1830' }}
@@ -96,6 +140,7 @@ export const TransactionPage = () => {
                             ].map(({ key, label, Icon }) => (
                                 <button
                                     key={key}
+                                    onClick={() => handleViewChange(key)}
                                     className='flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all'
                                     style={{
                                         backgroundColor: view === key ? 'rgba(65,210,242,0.12)' : 'rgba(255,255,255,0.04)',
@@ -110,6 +155,11 @@ export const TransactionPage = () => {
                         </div>
 
                         <button
+                            onClick={() =>
+                                view === 'all'
+                                    ? fetchTransactions(activeAccount)
+                                    : fetchLastTransactions(activeAccount)
+                            }
                             disabled={loading}
                             className='p-2 rounded-lg transition-opacity hover:opacity-70 disabled:opacity-40'
                             style={{ backgroundColor: 'rgba(65,210,242,0.08)', color: '#41D2F2' }}
@@ -124,6 +174,7 @@ export const TransactionPage = () => {
                             {TYPE_FILTERS.map(({ key, label }) => (
                                 <button
                                     key={key}
+                                    onClick={() => setFilter(key)}
                                     className='text-xs font-semibold px-3 py-1.5 rounded-full transition-all'
                                     style={{
                                         backgroundColor: filter === key ? 'rgba(65,210,242,0.15)' : 'rgba(255,255,255,0.05)',
@@ -180,6 +231,9 @@ export const TransactionPage = () => {
 
             <TransactionModal
                 isOpen={showModal}
+                onClose={() => setShowModal(false)}
+                onSubmit={handleSubmit}
+                loading={modalLoading}
                 defaultAccountNumber={activeAccount}
             />
         </div>
