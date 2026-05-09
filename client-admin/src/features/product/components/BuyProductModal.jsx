@@ -3,15 +3,38 @@ import { XMarkIcon, ShoppingCartIcon } from '@heroicons/react/24/outline';
 
 export const BuyProductModal = ({ product, onClose, onConfirm, loading }) => {
     const [accountNumber, setAccountNumber] = useState('');
+    const [quantity, setQuantity] = useState(1);
     const [error, setError] = useState('');
+
+    const total = (product.price * quantity).toFixed(2);
 
     const handleConfirm = () => {
         if (!accountNumber.trim()) {
             setError('Ingresa el número de cuenta.');
             return;
         }
-        onConfirm({ productId: product._id, accountNumber: accountNumber.trim(), amount: product.price });
+        if (quantity < 1 || isNaN(quantity)) {
+            setError('La cantidad debe ser al menos 1.');
+            return;
+        }
+        // Payload que espera el backend: { product, quantity, fromAccountNumber }
+        onConfirm({
+            product: product._id,
+            quantity: Number(quantity),
+            fromAccountNumber: accountNumber.replace(/\s+/g, ''),
+        });
     };
+
+    const inputStyle = (hasError) => ({
+        backgroundColor: 'rgba(11,24,48,0.6)',
+        border: `1px solid ${hasError ? 'rgba(239,68,68,0.5)' : 'rgba(65,210,242,0.2)'}`,
+        color: '#FFFFFF',
+        borderRadius: '0.75rem',
+        padding: '0.6rem 0.875rem',
+        width: '100%',
+        fontSize: '0.875rem',
+        outline: 'none',
+    });
 
     return (
         <div
@@ -45,30 +68,45 @@ export const BuyProductModal = ({ product, onClose, onConfirm, loading }) => {
                         <span className='text-xs font-semibold' style={{ color: '#FFFFFF' }}>{product.name}</span>
                     </div>
                     <div className='flex justify-between'>
-                        <span className='text-xs' style={{ color: 'rgba(255,255,255,0.45)' }}>Monto</span>
-                        <span className='text-sm font-bold' style={{ color: '#41D2F2' }}>Q {product.price?.toFixed(2)}</span>
+                        <span className='text-xs' style={{ color: 'rgba(255,255,255,0.45)' }}>Precio unitario</span>
+                        <span className='text-xs font-semibold' style={{ color: '#FFFFFF' }}>Q {product.price?.toFixed(2)}</span>
+                    </div>
+                    <div className='flex justify-between border-t pt-2' style={{ borderColor: 'rgba(65,210,242,0.1)' }}>
+                        <span className='text-xs' style={{ color: 'rgba(255,255,255,0.45)' }}>Total</span>
+                        <span className='text-sm font-bold' style={{ color: '#41D2F2' }}>Q {total}</span>
                     </div>
                 </div>
 
-                {/* Cuenta */}
+                {/* Cantidad */}
                 <div>
                     <label className='block text-xs mb-1.5' style={{ color: 'rgba(255,255,255,0.55)' }}>
-                        Número de cuenta *
+                        Cantidad *
+                    </label>
+                    <input
+                        type='number'
+                        min='1'
+                        max={product.stock ?? undefined}
+                        value={quantity}
+                        onChange={(e) => { setQuantity(e.target.value); setError(''); }}
+                        style={inputStyle(false)}
+                    />
+                    {product.stock !== null && (
+                        <p className='text-xs mt-1' style={{ color: 'rgba(255,255,255,0.35)' }}>
+                            Stock disponible: {product.stock}
+                        </p>
+                    )}
+                </div>
+
+                {/* Cuenta origen */}
+                <div>
+                    <label className='block text-xs mb-1.5' style={{ color: 'rgba(255,255,255,0.55)' }}>
+                        Número de cuenta origen *
                     </label>
                     <input
                         value={accountNumber}
                         onChange={(e) => { setAccountNumber(e.target.value); setError(''); }}
                         placeholder='Ej. 1234567890'
-                        style={{
-                            backgroundColor: 'rgba(11,24,48,0.6)',
-                            border: `1px solid ${error ? 'rgba(239,68,68,0.5)' : 'rgba(65,210,242,0.2)'}`,
-                            color: '#FFFFFF',
-                            borderRadius: '0.75rem',
-                            padding: '0.6rem 0.875rem',
-                            width: '100%',
-                            fontSize: '0.875rem',
-                            outline: 'none',
-                        }}
+                        style={inputStyle(!!error)}
                     />
                     {error && <p className='text-xs mt-1' style={{ color: '#fca5a5' }}>{error}</p>}
                 </div>

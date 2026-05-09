@@ -117,15 +117,15 @@ export const ProductPage = () => {
     // ── compras filtradas ──
     const filteredPurchases = purchases.filter((p) => {
         const statusOk = purchaseStatusFilter === 'ALL' || p.status === purchaseStatusFilter;
-        const searchOk = !purchaseSearch || p.accountNumber?.includes(purchaseSearch);
+        const searchOk = !purchaseSearch || p.transactionId?.includes(purchaseSearch) || p._id?.includes(purchaseSearch);
         return statusOk && searchOk;
     });
 
     const purchaseCounts = {
         total:      purchases.length,
-        completado: purchases.filter((p) => p.status === 'COMPLETADO').length,
-        pendiente:  purchases.filter((p) => p.status === 'PENDIENTE').length,
-        fallido:    purchases.filter((p) => p.status === 'FALLIDO').length,
+        completado: purchases.filter((p) => p.status === 'COMPLETED').length,
+        pendiente:  purchases.filter((p) => p.status === 'PENDING').length,
+        fallido:    purchases.filter((p) => p.status === 'FAILED').length,
     };
 
     // ── handlers productos ──
@@ -323,13 +323,13 @@ export const ProductPage = () => {
                         </div>
                         <div className='flex items-center gap-2 flex-wrap'>
                             <FunnelIcon className='w-4 h-4 flex-shrink-0' style={{ color: 'rgba(255,255,255,0.4)' }} />
-                            {['ALL', 'COMPLETADO', 'PENDIENTE', 'FALLIDO'].map((s) => (
+                            {['ALL', 'COMPLETED', 'PENDING', 'FAILED'].map((s) => (
                                 <button key={s} onClick={() => setPurchaseStatusFilter(s)}
                                     className='px-3 py-1.5 rounded-full text-xs font-semibold transition-all'
                                     style={purchaseStatusFilter === s
                                         ? { backgroundColor: '#41D2F2', color: '#0B1830' }
                                         : { backgroundColor: 'rgba(65,210,242,0.08)', color: 'rgba(255,255,255,0.55)', border: '1px solid rgba(65,210,242,0.15)' }}>
-                                    {s === 'ALL' ? 'Todos' : s.charAt(0) + s.slice(1).toLowerCase()}
+                                    {s === 'ALL' ? 'Todos' : s === 'COMPLETED' ? 'Completado' : s === 'PENDING' ? 'Pendiente' : 'Fallido'}
                                 </button>
                             ))}
                         </div>
