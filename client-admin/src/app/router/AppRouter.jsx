@@ -6,6 +6,7 @@ import { ProtectedRoute } from './ProtectedRoute.jsx';
 import { DashboardLayout } from '../layouts/DashboardLayout.jsx';
 import { AccountPage } from '../../features/account/pages/AccountPage.jsx';
 import { TransactionPage } from '../../features/transaction/pages/TransactionPage.jsx';
+import { ProductPage } from '../../features/product/pages/ProductPage.jsx'; // ← nuevo
 
 export const AppRouter = () => {
   return (
@@ -39,11 +40,14 @@ export const AppRouter = () => {
           }
         />
 
-        {/* /dashboard/accounts — AccountPage (ADMIN_ROLE y USER_ROLE) */}
+        {/* /dashboard/accounts */}
         <Route path='accounts' element={<AccountPage />} />
 
-        {/* /dashboard/transactions — future TransactionPage */}
+        {/* /dashboard/transactions */}
         <Route path='transactions' element={<TransactionPage />} />
+
+        {/* /dashboard/products ← nuevo */}
+        <Route path='products' element={<ProductPage />} />
       </Route>
 
       {/* Fallback */}

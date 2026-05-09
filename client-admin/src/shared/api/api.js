@@ -1,7 +1,6 @@
 import axios from '../utils/axios.js';
 import { useAuthStore } from '../../features/auth/store/authStore.js';
 
-// Instancias Axios por servicio
 const axiosAuth = axios.create({
   baseURL: import.meta.env.VITE_AUTH_URL,
   timeout: 8000,
@@ -26,7 +25,13 @@ const axiosTransaction = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-// Interceptores de request — inyectan el token Bearer
+const axiosProduct = axios.create({
+  baseURL: import.meta.env.VITE_PRODUCT_URL,
+  timeout: 8000,
+  headers: { 'Content-Type': 'application/json' },
+});
+
+// Interceptores de request
 axiosAdmin.interceptors.request.use((config) => {
   config._axiosClient = 'admin';
   const token = useAuthStore.getState().token;
@@ -50,6 +55,13 @@ axiosAccount.interceptors.request.use((config) => {
 
 axiosTransaction.interceptors.request.use((config) => {
   config._axiosClient = 'transaction';
+  const token = useAuthStore.getState().token;
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
+
+axiosProduct.interceptors.request.use((config) => {
+  config._axiosClient = 'product';
   const token = useAuthStore.getState().token;
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
@@ -92,5 +104,6 @@ axiosAuth.interceptors.response.use((res) => res, handleResponseError);
 axiosAdmin.interceptors.response.use((res) => res, handleResponseError);
 axiosAccount.interceptors.response.use((res) => res, handleResponseError);
 axiosTransaction.interceptors.response.use((res) => res, handleResponseError);
+axiosProduct.interceptors.response.use((res) => res, handleResponseError); // ← nuevo
 
-export { axiosAdmin, axiosAuth, axiosAccount, axiosTransaction };
+export { axiosAdmin, axiosAuth, axiosAccount, axiosTransaction, axiosProduct };
