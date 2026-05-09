@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import {
     getAllProducts,
+    getAvailableProducts,
     createProduct as createProductRequest,
     updateProduct as updateProductRequest,
     disableProduct as disableProductRequest,
@@ -20,13 +21,20 @@ export const useProductStore = create((set) => ({
 
     // ─── PRODUCTOS ────────────────────────────────────────────────────────────
 
-    fetchProducts: async () => {
+    fetchProducts: async (isAdmin) => {
+        // Esperar a que el authStore rehidrate (isAdmin puede ser undefined el primer tick)
+        if (isAdmin === undefined) return;
         try {
             set({ loading: true, error: null });
-            const { data } = await getAllProducts();
+            // Admin: GET /products (todos, incluye INACTIVO)
+            // Usuario: GET /products/available/list (solo ACTIVO)
+            const { data } = isAdmin
+                ? await getAllProducts()
+                : await getAvailableProducts();
             set({ products: data.data ?? [], loading: false });
-        } catch {
-            set({ products: [], loading: false, error: null });
+        } catch (err) {
+            console.error('[fetchProducts] error:', err?.response?.status, err?.response?.data || err?.message);
+            set({ products: [], loading: false, error: err?.response?.data?.message || 'Error al cargar productos' });
         }
     },
 
@@ -105,17 +113,26 @@ export const useProductStore = create((set) => ({
         try {
             set({ purchasesLoading: true });
             const { data } = isAdmin ? await getAllPurchases() : await getMyPurchases();
-            set({ purchases: data.data ?? [], purchasesLoading: false });
+            // El backend retorna { success, purchases }
+            set({ purchases: data.purchases ?? [], purchasesLoading: false });
         } catch {
             set({ purchases: [], purchasesLoading: false });
         }
     },
 
-    createPurchase: async (purchaseData) => {
+    createPurchase: async (purchaseData, isAdmin) => {
         try {
             const { data } = await createPurchaseRequest(purchaseData);
-            set((state) => ({ purchases: [data.data, ...state.purchases] }));
+            // El backend retorna { success, purchase }
+            set((state) => ({ purchases: [data.purchase, ...state.purchases] }));
             showSuccess('¡Compra realizada exitosamente!');
+
+            // Refrescar productos para que el stock se actualice en tiempo real
+            const { data: productsData } = isAdmin
+                ? await getAllProducts()
+                : await getAvailableProducts();
+            set({ products: productsData.data ?? [] });
+
             return { success: true };
         } catch (err) {
             const message = err.response?.data?.message || 'Error al realizar la compra';

@@ -4,6 +4,7 @@ import { useAuthStore } from '../../auth/store/authStore.js';
 
 export const useProduct = () => {
     const isAdmin = useAuthStore((s) => s.user?.role === 'ADMIN_ROLE');
+    const isLoadingAuth = useAuthStore((s) => s.isLoadingAuth);
 
     const {
         products,
@@ -22,8 +23,10 @@ export const useProduct = () => {
     } = useProductStore();
 
     useEffect(() => {
-        fetchProducts();
-    }, []);
+        if (!isLoadingAuth) {
+            fetchProducts(isAdmin);
+        }
+    }, [isLoadingAuth, isAdmin]);
 
     return {
         isAdmin,
@@ -38,7 +41,7 @@ export const useProduct = () => {
         disableProduct,
         enableProduct,
         fetchPurchases,
-        createPurchase,
+        createPurchase: (purchaseData) => createPurchase(purchaseData, isAdmin),
         clearError,
     };
 };

@@ -1,20 +1,24 @@
 import { XMarkIcon, ShoppingBagIcon } from '@heroicons/react/24/outline';
 
+// El backend retorna status en inglés: COMPLETED, PENDING, FAILED
 const STATUS_CONFIG = {
-    COMPLETADO: { bg: 'rgba(65,210,242,0.12)',  color: '#41D2F2'  },
-    PENDIENTE:  { bg: 'rgba(255,233,104,0.12)', color: '#FFE968'  },
-    FALLIDO:    { bg: 'rgba(239,68,68,0.12)',   color: '#fca5a5'  },
+    COMPLETED: { bg: 'rgba(65,210,242,0.12)',  color: '#41D2F2',  label: 'Completado' },
+    PENDING:   { bg: 'rgba(255,233,104,0.12)', color: '#FFE968',  label: 'Pendiente'  },
+    FAILED:    { bg: 'rgba(239,68,68,0.12)',   color: '#fca5a5',  label: 'Fallido'    },
 };
 
 export const PurchaseDetailModal = ({ purchase, onClose }) => {
     if (!purchase) return null;
-    const badge = STATUS_CONFIG[purchase.status] ?? STATUS_CONFIG.PENDIENTE;
+    const badge = STATUS_CONFIG[purchase.status] ?? STATUS_CONFIG.PENDING;
 
     const fmt = (iso) =>
         new Date(iso).toLocaleDateString('es-GT', {
             year: 'numeric', month: 'short', day: '2-digit',
             hour: '2-digit', minute: '2-digit',
         });
+
+    // El backend hace .populate('product')
+    const productName = purchase.product?.name ?? purchase.product ?? '—';
 
     return (
         <div
@@ -42,21 +46,23 @@ export const PurchaseDetailModal = ({ purchase, onClose }) => {
 
                 <div className='flex flex-col gap-2'>
                     {[
-                        { label: 'Cuenta',   value: purchase.accountNumber },
-                        { label: 'Producto', value: purchase.productId?.name ?? purchase.productId },
-                        { label: 'Monto',    value: `Q ${purchase.amount?.toFixed(2)}` },
-                        { label: 'Moneda',   value: purchase.currency ?? 'GTQ' },
-                        { label: 'Fecha',    value: fmt(purchase.createdAt) },
+                        { label: 'Producto',    value: productName },
+                        { label: 'Cantidad',    value: purchase.quantity },
+                        { label: 'Precio unit.', value: `Q ${purchase.unitPrice?.toFixed(2)}` },
+                        { label: 'Total',       value: `Q ${purchase.amount?.toFixed(2)}` },
+                        { label: 'Moneda',      value: purchase.currency ?? 'GTQ' },
+                        { label: 'Transacción', value: purchase.transactionId ?? '—' },
+                        { label: 'Fecha',       value: fmt(purchase.createdAt) },
                     ].map(({ label, value }) => (
                         <div key={label} className='flex justify-between items-center px-3 py-2.5 rounded-xl' style={{ backgroundColor: 'rgba(11,24,48,0.5)' }}>
                             <span className='text-xs' style={{ color: 'rgba(255,255,255,0.45)' }}>{label}</span>
-                            <span className='text-xs font-semibold' style={{ color: '#FFFFFF' }}>{value}</span>
+                            <span className='text-xs font-semibold truncate max-w-[60%] text-right' style={{ color: '#FFFFFF' }}>{value}</span>
                         </div>
                     ))}
                     <div className='flex justify-between items-center px-3 py-2.5 rounded-xl' style={{ backgroundColor: 'rgba(11,24,48,0.5)' }}>
                         <span className='text-xs' style={{ color: 'rgba(255,255,255,0.45)' }}>Estado</span>
                         <span className='text-xs font-bold px-2.5 py-1 rounded-full' style={{ backgroundColor: badge.bg, color: badge.color }}>
-                            {purchase.status}
+                            {badge.label}
                         </span>
                     </div>
                 </div>
