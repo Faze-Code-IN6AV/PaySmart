@@ -158,6 +158,10 @@ export const TransactionModal = ({ isOpen, onClose, onSubmit, loading = false, d
                                 style={{ backgroundColor: '#0B1830', borderColor: '#FFE968', color: '#FFFFFF' }}
                                 {...register('toAccountNumber', {
                                     required: tab === 'TRANSFER' ? 'La cuenta destino es obligatoria' : false,
+                                    validate: (val) =>
+                                        tab !== 'TRANSFER' ||
+                                        val.trim() !== watch('accountNumber').trim() ||
+                                        'La cuenta destino no puede ser la misma que la cuenta origen',
                                 })}
                             />
                             {errors.toAccountNumber && (
@@ -185,7 +189,9 @@ export const TransactionModal = ({ isOpen, onClose, onSubmit, loading = false, d
                                     min: { value: 0.01, message: 'El monto mínimo es Q0.01' },
                                     max: tab === 'TRANSFER'
                                         ? { value: 2000, message: 'Límite por transferencia: Q2,000' }
-                                        : undefined,
+                                        : tab === 'DEPOSIT'
+                                        ? { value: 50000, message: 'Límite por depósito: Q50,000' }
+                                        : { value: 10000, message: 'Límite por compra: Q10,000' },
                                 })}
                             />
                         </div>
@@ -195,6 +201,16 @@ export const TransactionModal = ({ isOpen, onClose, onSubmit, loading = false, d
                         {tab === 'TRANSFER' && (
                             <p className='text-xs mt-1' style={{ color: 'rgba(255,255,255,0.3)' }}>
                                 Límite por transacción: Q2,000 · Límite diario: Q10,000
+                            </p>
+                        )}
+                        {tab === 'DEPOSIT' && (
+                            <p className='text-xs mt-1' style={{ color: 'rgba(255,255,255,0.3)' }}>
+                                Límite por depósito: Q50,000
+                            </p>
+                        )}
+                        {tab === 'PURCHASE' && (
+                            <p className='text-xs mt-1' style={{ color: 'rgba(255,255,255,0.3)' }}>
+                                Límite por compra: Q10,000
                             </p>
                         )}
                     </div>
