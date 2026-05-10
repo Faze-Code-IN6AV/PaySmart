@@ -4,6 +4,11 @@ import { XMarkIcon, ShoppingCartIcon } from '@heroicons/react/24/outline';
 export const BuyProductModal = ({ product, onClose, onConfirm, loading }) => {
     const [accountNumber, setAccountNumber] = useState('');
     const [quantity, setQuantity] = useState(1);
+
+    const handleQuantityChange = (e) => {
+        setQuantity(Number(e.target.value));
+        setError('');
+    };
     const [error, setError] = useState('');
 
     const total = (product.price * quantity).toFixed(2);
@@ -13,8 +18,12 @@ export const BuyProductModal = ({ product, onClose, onConfirm, loading }) => {
             setError('Ingresa el número de cuenta.');
             return;
         }
-        if (quantity < 1 || isNaN(quantity)) {
+        if (!quantity || isNaN(quantity) || quantity < 1) {
             setError('La cantidad debe ser al menos 1.');
+            return;
+        }
+        if (product.stock !== null && quantity > product.stock) {
+            setError(`Stock insuficiente. Máximo disponible: ${product.stock}`);
             return;
         }
         // Payload que espera el backend: { product, quantity, fromAccountNumber }
@@ -87,7 +96,7 @@ export const BuyProductModal = ({ product, onClose, onConfirm, loading }) => {
                         min='1'
                         max={product.stock ?? undefined}
                         value={quantity}
-                        onChange={(e) => { setQuantity(e.target.value); setError(''); }}
+                        onChange={handleQuantityChange}
                         style={inputStyle(false)}
                     />
                     {product.stock !== null && (

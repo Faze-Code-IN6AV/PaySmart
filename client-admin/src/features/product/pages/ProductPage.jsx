@@ -117,7 +117,9 @@ export const ProductPage = () => {
     // ── compras filtradas ──
     const filteredPurchases = purchases.filter((p) => {
         const statusOk = purchaseStatusFilter === 'ALL' || p.status === purchaseStatusFilter;
-        const searchOk = !purchaseSearch || p.transactionId?.includes(purchaseSearch) || p._id?.includes(purchaseSearch);
+        const searchOk = !purchaseSearch ||
+            p.fromAccountNumber?.includes(purchaseSearch) ||
+            p.transactionId?.includes(purchaseSearch);
         return statusOk && searchOk;
     });
 
@@ -316,7 +318,7 @@ export const ProductPage = () => {
                             <input
                                 value={purchaseSearch}
                                 onChange={(e) => setPurchaseSearch(e.target.value)}
-                                placeholder='Buscar por número de cuenta...'
+                                placeholder='Buscar por número de cuenta o transacción...'
                                 className='flex-1 bg-transparent text-sm outline-none'
                                 style={{ color: '#FFFFFF' }}
                             />
