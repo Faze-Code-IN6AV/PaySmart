@@ -39,12 +39,12 @@ export const AccountCard = ({ account }) => {
 
   // Oculto: primeros 14 dígitos como •••• •••• •••• y últimos 4 visibles
   const maskedNumber = num
-    ? `•••• •••• •••• ${num.slice(-4)}`
+    ? `•••• •••• •••• •••• ${num.slice(-2)}`
     : '—';
 
   // Visible: grupos de 4
   const visibleNumber = num
-    ? num.replace(/(.{4})/g, '$1 ').trim()
+    ? num
     : '—';
 
   const formattedBalance = Number(account.balance ?? 0).toLocaleString('es-GT', {

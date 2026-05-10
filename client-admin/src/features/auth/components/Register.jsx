@@ -81,7 +81,12 @@ export const RegisterForm = ({ onSwitch, onVerificationSent }) => {
           placeholder='juanperez'
           className='w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2'
           style={inputStyle}
-          {...register('username', { required: 'El username es obligatorio' })}
+          {...register('username', {
+            required: 'El username es obligatorio',
+            minLength: { value: 3, message: 'Mínimo 3 caracteres' },
+            maxLength: { value: 20, message: 'Máximo 20 caracteres' },
+            pattern: { value: /^[a-zA-Z0-9_]+$/, message: 'Solo letras, números y guión bajo (_)' },
+          })}
         />
         {errors.username && <p className='text-red-400 text-xs mt-1'>{errors.username.message}</p>}
       </div>
@@ -122,17 +127,33 @@ export const RegisterForm = ({ onSwitch, onVerificationSent }) => {
 
       <div>
         <label className='block text-sm font-medium mb-1.5' style={{ color: '#FFFFFF' }}>
+          Confirmar Contraseña
+        </label>
+        <input
+          type='password'
+          placeholder='••••••••'
+          className='w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2'
+          style={inputStyle}
+          {...register('confirmPassword', {
+            required: 'Confirma tu contraseña',
+            validate: (val) => val === watch('password') || 'Las contraseñas no coinciden',
+          })}
+        />
+        {errors.confirmPassword && <p className='text-red-400 text-xs mt-1'>{errors.confirmPassword.message}</p>}
+      </div>
+
+      <div>
+        <label className='block text-sm font-medium mb-1.5' style={{ color: '#FFFFFF' }}>
           Teléfono <span className='text-xs opacity-60'>(8 dígitos)</span>
         </label>
         <input
-          type='tel'
+          type='text'
           placeholder='50201234567'
           className='w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2'
           style={inputStyle}
           {...register('phone', {
             required: 'El teléfono es obligatorio',
-            minLength: { value: 8, message: 'Debe tener exactamente 8 dígitos' },
-            maxLength: { value: 8, message: 'Debe tener exactamente 8 dígitos' },
+            pattern: { value: /^\d{8}$/, message: 'Debe contener exactamente 8 dígitos numéricos' },
           })}
         />
         {errors.phone && <p className='text-red-400 text-xs mt-1'>{errors.phone.message}</p>}

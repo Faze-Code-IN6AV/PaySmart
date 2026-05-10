@@ -115,9 +115,10 @@ export const CreateAccountModal = ({ isOpen, onClose, onSubmit, loading = false 
                 style={{ backgroundColor: '#0B1830', borderColor: '#41D2F2', color: '#FFFFFF' }}
                 {...register('balance', {
                   required: 'El saldo inicial es requerido',
-                  min: {
-                    value: currentType?.minBalance ?? 1,
-                    message: `El mínimo para este tipo es Q${currentType?.minBalance ?? 1}`,
+                  validate: (val) => {
+                    const selectedType = ACCOUNT_TYPES.find((t) => t.value === watch('accountType'));
+                    const min = selectedType?.minBalance ?? 1;
+                    return Number(val) >= min || `El mínimo para este tipo es Q${min}`;
                   },
                 })}
               />

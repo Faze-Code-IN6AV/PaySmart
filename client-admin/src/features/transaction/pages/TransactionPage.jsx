@@ -8,8 +8,8 @@ import { TransactionModal } from '../components/TransactionModal.jsx';
 const TYPE_FILTERS = [
     { key: 'TODOS', label: 'Todos' },
     { key: 'DEPOSIT', label: 'Depósitos' },
-    { key: 'WITHDRAW', label: 'Retiros' },
     { key: 'TRANSFER', label: 'Transferencias' },
+    { key: 'PURCHASE', label: 'Compras' },
 ];
 
 export const TransactionPage = ({ accountNumber: propAccountNumber }) => {
@@ -101,7 +101,7 @@ export const TransactionPage = ({ accountNumber: propAccountNumber }) => {
                     value={accountInput}
                     onChange={(e) => setAccountInput(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                    placeholder='Número de cuenta (ACC-000123)'
+                    placeholder='Número de cuenta (18 dígitos)'
                     className='flex-1 bg-transparent outline-none text-sm'
                     style={{ color: '#FFFFFF' }}
                 />

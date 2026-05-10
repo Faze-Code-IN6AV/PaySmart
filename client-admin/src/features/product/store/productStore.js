@@ -115,8 +115,10 @@ export const useProductStore = create((set) => ({
             const { data } = isAdmin ? await getAllPurchases() : await getMyPurchases();
             // El backend retorna { success, purchases }
             set({ purchases: data.purchases ?? [], purchasesLoading: false });
-        } catch {
+        } catch (err) {
+            const message = err.response?.data?.message || 'Error al cargar las compras';
             set({ purchases: [], purchasesLoading: false });
+            showError(message);
         }
     },
 
