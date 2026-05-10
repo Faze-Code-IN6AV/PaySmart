@@ -11,6 +11,7 @@ import {
 import { useAccount } from '../hooks/useAccount.js';
 import { AccountCard } from '../components/AccountCard.jsx';
 import { CreateAccountModal } from '../components/CreateAccountModal.jsx';
+import { showError } from '../../../shared/utils/toast.js';
 
 const STATUS_BADGE = {
     ACTIVO: { label: 'Activo', bg: 'rgba(65,210,242,0.12)', color: '#41D2F2' },
@@ -105,6 +106,11 @@ const AdminView = ({ searchResults, searchLoading, searchByEmail, suspendAccount
     const handleSearch = async (e) => {
         e.preventDefault();
         if (!email.trim()) return;
+        const emailRegex = /^\S+@\S+\.\S+$/;
+        if (!emailRegex.test(email.trim())) {
+            showError('Ingresa un correo electrónico válido');
+            return;
+        }
         await searchByEmail(email.trim());
     };
 
