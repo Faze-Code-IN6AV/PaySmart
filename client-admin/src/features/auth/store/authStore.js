@@ -17,12 +17,20 @@ export const useAuthStore = create(
       isLoadingAuth: true,
       isAuthenticated: false,
 
-      // Verifica si hay sesión activa con un rol válido
+      // Verifica si hay sesión activa con un rol válido y que no haya expirado
       checkAuth: () => {
         const token = get().token;
         const role = get().user?.role;
+        const expiresAt = get().expiresAt;
         const hasValidRole = ALLOWED_ROLES.includes(role);
 
+        // Sesión expirada — limpiar y salir
+        if (token && expiresAt && new Date(expiresAt) < new Date()) {
+          get().logout();
+          return;
+        }
+
+        // Token presente pero sin rol válido
         if (token && !hasValidRole) {
           set({
             user: null,
@@ -49,6 +57,9 @@ export const useAuthStore = create(
           isAuthenticated: false,
         });
         useAccountStore.getState().clearSearch();
+        // Redirigir al login independientemente de dónde se llame el logout
+        // (desde interceptor de axios, checkAuth, o botón manual)
+        window.location.href = '/';
       },
 
       login: async ({ emailOrUsername, password }) => {
