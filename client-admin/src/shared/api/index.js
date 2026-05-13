@@ -6,3 +6,4 @@ export * from './account';
 export * from "./transaction";
 export * from "./product";
 export * from './purchase';
+export * from './favoriteAccount';
