@@ -6,7 +6,8 @@ import { ProtectedRoute } from './ProtectedRoute.jsx';
 import { DashboardLayout } from '../layouts/DashboardLayout.jsx';
 import { AccountPage } from '../../features/account/pages/AccountPage.jsx';
 import { TransactionPage } from '../../features/transaction/pages/TransactionPage.jsx';
-import { ProductPage } from '../../features/product/pages/ProductPage.jsx'; // ← nuevo
+import { ProductPage } from '../../features/product/pages/ProductPage.jsx';
+import { FavoriteAccountPage } from '../../features/favoriteaccount/pages/FavoriteAccountPage.jsx';
 
 export const AppRouter = () => {
   return (
@@ -46,8 +47,11 @@ export const AppRouter = () => {
         {/* /dashboard/transactions */}
         <Route path='transactions' element={<TransactionPage />} />
 
-        {/* /dashboard/products ← nuevo */}
+        {/* /dashboard/products */}
         <Route path='products' element={<ProductPage />} />
+
+          {/* /dashboard/favorites */}
+        <Route path='favorites' element={<FavoriteAccountPage />} />
       </Route>
 
       {/* Fallback */}

@@ -67,7 +67,7 @@ axiosProduct.interceptors.request.use((config) => {
   return config;
 });
 
-// Lógica de manejo de token expirado
+// LÃ³gica de manejo de token expirado
 let _isRefreshing = false;
 let failedQueue = [];
 
@@ -100,10 +100,24 @@ const handleResponseError = async (error) => {
   return Promise.reject(error);
 };
 
+const axiosFavorite = axios.create({
+  baseURL: import.meta.env.VITE_FAVORITE_URL,
+  timeout: 8000,
+  headers: { 'Content-Type': 'application/json' },
+});
+
+axiosFavorite.interceptors.request.use((config) => {
+  config._axiosClient = 'favorite';
+  const token = useAuthStore.getState().token;
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
+
 axiosAuth.interceptors.response.use((res) => res, handleResponseError);
 axiosAdmin.interceptors.response.use((res) => res, handleResponseError);
 axiosAccount.interceptors.response.use((res) => res, handleResponseError);
 axiosTransaction.interceptors.response.use((res) => res, handleResponseError);
-axiosProduct.interceptors.response.use((res) => res, handleResponseError); // ← nuevo
+axiosProduct.interceptors.response.use((res) => res, handleResponseError);
+axiosFavorite.interceptors.response.use((res) => res, handleResponseError);
 
-export { axiosAdmin, axiosAuth, axiosAccount, axiosTransaction, axiosProduct };
+export { axiosAdmin, axiosAuth, axiosAccount, axiosTransaction, axiosProduct, axiosFavorite };

@@ -3,12 +3,14 @@ import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { CreditCardIcon, ArrowRightStartOnRectangleIcon, Bars3Icon, XMarkIcon, ShieldCheckIcon, HomeIcon, CubeIcon } from '@heroicons/react/24/outline';
 import { useAuthStore } from '../../features/auth/store/authStore.js';
 import logo from '../../assets/img/paysmart_logo.png';
+import { StarIcon } from '@heroicons/react/24/outline';
 
 const NAV_ITEMS = [
   { path: '/dashboard', label: 'Inicio', Icon: HomeIcon, exact: true },
   { path: '/dashboard/accounts', label: 'Cuentas', Icon: CreditCardIcon },
   { path: '/dashboard/transactions', label: 'Transacciones', Icon: CreditCardIcon },
   { path: '/dashboard/products', label: 'Productos', Icon: CubeIcon },
+  { path: '/dashboard/favorites', label: 'Favoritas', Icon: StarIcon },
 ];
 
 export const DashboardLayout = () => {
