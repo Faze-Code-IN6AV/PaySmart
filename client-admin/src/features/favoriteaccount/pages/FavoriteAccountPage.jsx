@@ -11,7 +11,7 @@ import { useTransactionStore } from '../../transaction/store/transactionStore.js
 import { FavoriteAccountCard } from '../components/FavoriteAccountCard.jsx';
 import { CreateFavoriteModal } from '../components/CreateFavoriteModal.jsx';
 import { EditFavoriteModal } from '../components/EditFavoriteModal.jsx';
-// import { QuickTransferModal } from '../components/QuickTransferModal.jsx';
+import { QuickTransferModal } from '../components/QuickTransferModal.jsx';
 
 // ——— Modal de confirmación genérico ———
 const ConfirmModal = ({ action, alias, onConfirm, onCancel }) => {
@@ -233,13 +233,13 @@ export const FavoriteAccountPage = () => {
             />
 
             {/* Modal de transferencia rápida */}
-            {/* <QuickTransferModal
+            <QuickTransferModal
                 isOpen={!!transferTarget}
                 favorite={transferTarget}
                 onClose={() => setTransferTarget(null)}
                 onSubmit={handleQuickTransfer}
                 loading={transferLoading}
-            />*/}
+            />
 
             {confirm && (
                 <ConfirmModal
