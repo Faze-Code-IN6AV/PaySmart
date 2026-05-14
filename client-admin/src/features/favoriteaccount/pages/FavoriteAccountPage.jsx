@@ -7,9 +7,11 @@ import {
 } from '@heroicons/react/24/outline';
 
 import { useFavoriteAccount } from '../hooks/useFavoriteAccount.js';
+import { useTransactionStore } from '../../transaction/store/transactionStore.js';
 import { FavoriteAccountCard } from '../components/FavoriteAccountCard.jsx';
 import { CreateFavoriteModal } from '../components/CreateFavoriteModal.jsx';
 import { EditFavoriteModal } from '../components/EditFavoriteModal.jsx';
+// import { QuickTransferModal } from '../components/QuickTransferModal.jsx';
 
 // ——— Modal de confirmación genérico ———
 const ConfirmModal = ({ action, alias, onConfirm, onCancel }) => {
@@ -92,10 +94,15 @@ export const FavoriteAccountPage = () => {
         deactivateFavorite,
     } = useFavoriteAccount();
 
-    const [showCreate, setShowCreate]     = useState(false);
-    const [editTarget, setEditTarget]     = useState(null);   // favorite obj
-    const [confirm, setConfirm]           = useState(null);   // { action, id, alias }
-    const [modalLoading, setModalLoading] = useState(false);
+    // Store de transacciones para transferencias rápidas
+    const transfer        = useTransactionStore((s) => s.transfer);
+    const transferLoading = useTransactionStore((s) => s.loading);
+
+    const [showCreate, setShowCreate]         = useState(false);
+    const [editTarget, setEditTarget]         = useState(null);    // favorite obj
+    const [confirm, setConfirm]               = useState(null);    // { action, id, alias }
+    const [transferTarget, setTransferTarget] = useState(null);    // favorite obj para transferencia rápida
+    const [modalLoading, setModalLoading]     = useState(false);
 
     // ——— Handlers ———
     const handleCreate = async (data) => {
@@ -117,9 +124,16 @@ export const FavoriteAccountPage = () => {
     const handleConfirm = async () => {
         if (!confirm) return;
         const { action, id } = confirm;
-        if (action === 'activate')    await activateFavorite(id);
-        if (action === 'deactivate')  await deactivateFavorite(id);
+        if (action === 'activate')   await activateFavorite(id);
+        if (action === 'deactivate') await deactivateFavorite(id);
         setConfirm(null);
+    };
+
+    // Transferencia rápida: recibe { fromAccountNumber, toAccountNumber, amount, description }
+    const handleQuickTransfer = async ({ fromAccountNumber, toAccountNumber, amount, description }) => {
+        const res = await transfer({ fromAccountNumber, toAccountNumber, amount, description });
+        if (res?.success) setTransferTarget(null);
+        return res;
     };
 
     return (
@@ -179,6 +193,7 @@ export const FavoriteAccountPage = () => {
                             key={fav._id}
                             favorite={fav}
                             onEdit={(f) => setEditTarget(f)}
+                            onTransfer={(f) => setTransferTarget(f)}
                             onActivate={(id) => setConfirm({ action: 'activate', id, alias: fav.alias })}
                             onDeactivate={(id) => setConfirm({ action: 'deactivate', id, alias: fav.alias })}
                         />
@@ -216,6 +231,15 @@ export const FavoriteAccountPage = () => {
                 onSubmit={handleEdit}
                 loading={modalLoading}
             />
+
+            {/* Modal de transferencia rápida */}
+            {/* <QuickTransferModal
+                isOpen={!!transferTarget}
+                favorite={transferTarget}
+                onClose={() => setTransferTarget(null)}
+                onSubmit={handleQuickTransfer}
+                loading={transferLoading}
+            />*/}
 
             {confirm && (
                 <ConfirmModal
