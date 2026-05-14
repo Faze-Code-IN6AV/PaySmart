@@ -6,10 +6,11 @@ import {
     NoSymbolIcon,
     EyeIcon,
     EyeSlashIcon,
+    ArrowsRightLeftIcon,
 } from '@heroicons/react/24/outline';
 import { StarIcon as StarSolid } from '@heroicons/react/24/solid';
 
-export const FavoriteAccountCard = ({ favorite, onEdit, onActivate, onDeactivate }) => {
+export const FavoriteAccountCard = ({ favorite, onEdit, onActivate, onDeactivate, onTransfer }) => {
     const [showNumber, setShowNumber] = useState(false);
 
     const { _id, accountNumber = '', alias = '', isActive = true } = favorite;
@@ -55,16 +56,18 @@ export const FavoriteAccountCard = ({ favorite, onEdit, onActivate, onDeactivate
                         </p>
                     </div>
 
-                    {/* Badge estado */}
-                    <span
-                        className='text-xs font-semibold px-2.5 py-1 rounded-full flex-shrink-0'
-                        style={{
-                            backgroundColor: isActive ? 'rgba(65,210,242,0.12)' : 'rgba(255,255,255,0.06)',
-                            color: isActive ? '#41D2F2' : 'rgba(255,255,255,0.35)',
-                        }}
-                    >
-                        {isActive ? 'Activa' : 'Inactiva'}
-                    </span>
+                    {/* Badge estado — solo badge, sin botón transferir aquí */}
+                    <div className='flex flex-col items-end gap-1.5 flex-shrink-0'>
+                        <span
+                            className='text-xs font-semibold px-2.5 py-1 rounded-full'
+                            style={{
+                                backgroundColor: isActive ? 'rgba(65,210,242,0.12)' : 'rgba(255,255,255,0.06)',
+                                color: isActive ? '#41D2F2' : 'rgba(255,255,255,0.35)',
+                            }}
+                        >
+                            {isActive ? 'Activa' : 'Inactiva'}
+                        </span>
+                    </div>
                 </div>
 
                 {/* Número de cuenta */}
@@ -95,9 +98,11 @@ export const FavoriteAccountCard = ({ favorite, onEdit, onActivate, onDeactivate
 
                 {/* Acciones */}
                 <div
-                    className='flex gap-2 pt-2 flex-wrap'
+                    className='flex items-center justify-between gap-2 pt-2'
                     style={{ borderTop: '1px solid rgba(65,210,242,0.1)' }}
                 >
+                    {/* Izquierda: Editar + Activar/Desactivar */}
+                    <div className='flex gap-2 flex-wrap'>
                     {/* Editar alias */}
                     <button
                         onClick={() => onEdit(favorite)}
@@ -140,9 +145,23 @@ export const FavoriteAccountCard = ({ favorite, onEdit, onActivate, onDeactivate
                             Activar
                         </button>
                     )}
+                    </div>
 
-                    {/* Eliminar */}
-                
+                    {/* Derecha: Transferir (solo activa) */}
+                    {isActive && (
+                        <button
+                            onClick={() => onTransfer(favorite)}
+                            className='flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-opacity hover:opacity-70 flex-shrink-0'
+                            style={{
+                                backgroundColor: 'rgba(74,222,128,0.1)',
+                                color: '#4ADE80',
+                                border: '1px solid rgba(74,222,128,0.3)',
+                            }}
+                        >
+                            <ArrowsRightLeftIcon className='w-3.5 h-3.5' />
+                            Transferir
+                        </button>
+                    )}
                 </div>
             </div>
         </div>
