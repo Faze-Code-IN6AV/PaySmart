@@ -106,8 +106,21 @@ const axiosFavorite = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
+const axiosReport = axios.create({
+  baseURL: import.meta.env.VITE_REPORT_URL,
+  timeout: 8000,
+  headers: { 'Content-Type': 'application/json' },
+});
+
 axiosFavorite.interceptors.request.use((config) => {
   config._axiosClient = 'favorite';
+  const token = useAuthStore.getState().token;
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
+
+axiosReport.interceptors.request.use((config) => {
+  config._axiosClient = 'report';
   const token = useAuthStore.getState().token;
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
@@ -119,5 +132,6 @@ axiosAccount.interceptors.response.use((res) => res, handleResponseError);
 axiosTransaction.interceptors.response.use((res) => res, handleResponseError);
 axiosProduct.interceptors.response.use((res) => res, handleResponseError);
 axiosFavorite.interceptors.response.use((res) => res, handleResponseError);
+axiosReport.interceptors.response.use((res) => res, handleResponseError);
 
-export { axiosAdmin, axiosAuth, axiosAccount, axiosTransaction, axiosProduct, axiosFavorite };
+export { axiosAdmin, axiosAuth, axiosAccount, axiosTransaction, axiosProduct, axiosFavorite, axiosReport };
