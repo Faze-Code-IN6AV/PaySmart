@@ -8,6 +8,7 @@ import { AccountPage } from '../../features/account/pages/AccountPage.jsx';
 import { TransactionPage } from '../../features/transaction/pages/TransactionPage.jsx';
 import { ProductPage } from '../../features/product/pages/ProductPage.jsx';
 import { FavoriteAccountPage } from '../../features/favoriteaccount/pages/FavoriteAccountPage.jsx';
+import { ReportPage } from '../../features/report/pages/ReportPage.jsx';
 
 export const AppRouter = () => {
   return (
@@ -26,20 +27,8 @@ export const AppRouter = () => {
           </ProtectedRoute>
         }
       >
-        {/* /dashboard — índice temporal */}
-        <Route
-          index
-          element={
-            <div className='flex flex-col items-center justify-center h-64'>
-              <p className='text-lg font-semibold' style={{ color: 'rgba(255,255,255,0.5)' }}>
-                Dashboard — en construcción 
-              </p>
-              <p className='text-sm mt-2' style={{ color: 'rgba(255,255,255,0.3)' }}>
-                Selecciona una sección del menú lateral
-              </p>
-            </div>
-          }
-        />
+        {/* /dashboard — Panel de administración (reportes para admin, bienvenida para usuario) */}
+        <Route index element={<ReportPage />} />
 
         {/* /dashboard/accounts */}
         <Route path='accounts' element={<AccountPage />} />
