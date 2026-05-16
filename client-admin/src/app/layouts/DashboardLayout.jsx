@@ -31,11 +31,11 @@ export const DashboardLayout = () => {
     exact ? location.pathname === path : location.pathname.startsWith(path);
 
   return (
-    <div className='min-h-screen flex' style={{ backgroundColor: '#0B1830' }}>
+    <div className='h-screen flex overflow-hidden' style={{ backgroundColor: '#0B1830' }}>
 
       {/* ——— Sidebar — desktop ——— */}
       <aside
-        className='hidden lg:flex flex-col w-64 min-h-screen flex-shrink-0'
+        className='hidden lg:flex flex-col w-64 h-full flex-shrink-0'
         style={{ backgroundColor: '#162C5F', borderRight: '1px solid rgba(65,210,242,0.12)' }}
       >
         <SidebarContent
@@ -73,7 +73,7 @@ export const DashboardLayout = () => {
       )}
 
       {/* ——— Main content ——— */}
-      <div className='flex-1 flex flex-col min-h-screen'>
+      <div className='flex-1 flex flex-col h-full overflow-y-auto'>
 
         {/* Top bar */}
         <header

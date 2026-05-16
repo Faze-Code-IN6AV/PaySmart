@@ -256,6 +256,7 @@ export const getAccountsMostMovements = async (order = 'desc', limit = 10) => {
                 _id: '$accountNumber',
                 accountId: { $first: '$accountId' },
                 totalMovements: { $sum: 1 },
+                totalAmount: { $sum: '$amount' },
                 lastMovementAt: { $max: '$createdAt' }
             }
         },
@@ -267,6 +268,7 @@ export const getAccountsMostMovements = async (order = 'desc', limit = 10) => {
                 accountNumber: '$_id',
                 accountId: 1,
                 totalMovements: 1,
+                totalAmount: 1,
                 lastMovementAt: 1
             }
         }
@@ -314,6 +316,7 @@ export const getAccountsAdminOverview = async (limit = 5) => {
         result.push({
             accountNumber: acc._id,
             balance: accountData.balance,
+            status: accountData.status,
             lastMovements
         });
     }

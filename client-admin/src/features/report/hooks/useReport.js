@@ -16,11 +16,10 @@ export const useReport = () => {
     const clearError = useReportStore((s) => s.clearError);
 
     useEffect(() => {
-        // TODO: descomentar cuando el backend esté disponible
-        // if (!isLoadingAuth && isAdmin) {
-        //     fetchAccountsMostMovements();
-        //     fetchAccountsAdminOverview();
-        // }
+        if (!isLoadingAuth && isAdmin) {
+            fetchAccountsMostMovements();
+            fetchAccountsAdminOverview();
+        }
     }, [isLoadingAuth, isAdmin]);
 
     return {
