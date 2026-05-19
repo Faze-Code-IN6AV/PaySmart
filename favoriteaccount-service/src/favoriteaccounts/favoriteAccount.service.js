@@ -1,12 +1,19 @@
 import axios from 'axios';
 import FavoriteAccount from './favoriteAccount.model.js';
 
+// Axios con API Key interna para comunicación entre microservicios
+const internalAxios = axios.create();
+internalAxios.interceptors.request.use((config) => {
+  config.headers['X-Internal-Api-Key'] = process.env.INTERNAL_API_KEY || '';
+  return config;
+});
+
 // Agregar una cuenta favorita validando que exista en el AccountService
 export const addFavoriteAccount = async (userId, data, token) => {
   const { accountNumber, alias } = data;
 
-  // Validar que la cuenta exista en Account Service
-  await axios.get(
+  // Validar que la cuenta exista en Account Service (con API Key interna)
+  await internalAxios.get(
     `${process.env.ACCOUNT_SERVICE_URL}/internal/${accountNumber}/balance`
   );
 
