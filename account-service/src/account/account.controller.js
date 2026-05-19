@@ -36,6 +36,50 @@ export const createAccount = async (req, res) => {
     }
 };
 
+// [ADMIN] Crear cuenta bancaria para un cliente específico (por userId y email)
+export const adminCreateAccountForUser = async (req, res) => {
+    try {
+        if (req.user?.role !== 'ADMIN_ROLE') {
+            return res.status(403).json({
+                success: false,
+                message: 'Solo el administrador puede crear cuentas para clientes'
+            });
+        }
+
+        const { userId, email, accountType } = req.body;
+
+        if (!userId || !email || !accountType) {
+            return res.status(400).json({
+                success: false,
+                message: 'userId, email y accountType son obligatorios'
+            });
+        }
+
+        const validTypes = ['AHORRO', 'MONETARIA', 'EMPRESARIAL'];
+        if (!validTypes.includes(accountType)) {
+            return res.status(400).json({
+                success: false,
+                message: `Tipo de cuenta inválido. Use: ${validTypes.join(', ')}`
+            });
+        }
+
+        const account = await createAccountRecord({
+            accountData: { userId, email, accountType, balance: 0 }
+        });
+
+        res.status(201).json({
+            success: true,
+            message: `Cuenta ${accountType} creada exitosamente para el cliente.`,
+            data: account
+        });
+    } catch (err) {
+        res.status(400).json({
+            success: false,
+            message: err.message || 'Error al crear la cuenta'
+        });
+    }
+};
+
 // Obtener todas las cuentas del usuario autenticado
 export const getMyAccounts = async (req, res, next) => {
     try {

@@ -20,13 +20,13 @@ export const validateCreateAccount = [
         .custom((value, { req }) => {
             const type = req.body.accountType
 
-            if(type === 'AHORRO' && value < 100){
+            if(type === 'AHORRO' && value < 0){
                 throw new Error('La cuenta de AHORRO requiere mínimo Q 100.00.')
             }
-            if(type === 'MONETARIA' && value < 200){
+            if(type === 'MONETARIA' && value < 0){
                 throw new Error('La cuenta MONETARIA requiere mínimo Q 200.00.')
             }
-            if(type === 'EMPRESARIAL' && value < 1000){
+            if(type === 'EMPRESARIAL' && value < 0){
                 throw new Error('La cuenta EMPRESARIAL requiere mínimo Q 1000.00.')
             }
 
