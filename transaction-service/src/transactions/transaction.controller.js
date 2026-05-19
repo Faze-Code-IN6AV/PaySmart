@@ -13,9 +13,18 @@ import {
 } from './transaction.service.js';
 import Transaction from './transaction.model.js';
 
-// POST /transaction/deposit
+// POST /transaction/deposit — solo ADMIN puede depositar
 export const depositController = async (req, res) => {
     try {
+        // Validar que solo el administrador pueda realizar depósitos
+        if (req.user?.role !== 'ADMIN_ROLE') {
+            return res.status(403).json({
+                success: false,
+                message: 'Solo el administrador puede realizar depósitos',
+                error: 'FORBIDDEN'
+            });
+        }
+
         const { accountNumber, amount, description } = req.body;
 
         if (!accountNumber || !amount) {
