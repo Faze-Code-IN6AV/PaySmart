@@ -76,14 +76,20 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
                 .HasMaxLength(255);
             entity.Property(e => e.Status)
                 .HasDefaultValue(false);
+            entity.Property(e => e.IsDeleted)
+                .HasDefaultValue(false);
+            entity.Property(e => e.DeletedAt)
+                .IsRequired(false);
             entity.Property(e => e.CreatedAt)
                 .IsRequired();
             entity.Property(e => e.UpdatedAt)
                 .IsRequired();
-            //Indices para optimización de busqueda
+            // Filtro global de borrado lógico:
+            // NINGUNA query devuelve usuarios marcados como eliminados.
+            // Aplica automáticamente a todos los Include y joins.
+            entity.HasQueryFilter(u => !u.IsDeleted);
             entity.HasIndex(e => e.Username).IsUnique();
             entity.HasIndex(e => e.Email).IsUnique();
-            //Relaciones
             entity.HasOne(e => e.UserProfile)
                 .WithOne(p => p.User)
                 .HasForeignKey<UserProfile>(p => p.UserId);
@@ -107,7 +113,22 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
                 .ValueGeneratedOnAdd();
             entity.Property(e => e.UserId)
                 .HasMaxLength(16);
-            entity.Property(e => e.Phone).HasMaxLength(8);
+            entity.Property(e => e.Phone)
+                .IsRequired()
+                .HasMaxLength(8);
+            entity.Property(e => e.DPI)
+                .IsRequired()
+                .HasMaxLength(13);
+            entity.HasIndex(e => e.DPI).IsUnique();
+            entity.Property(e => e.Address)
+                .IsRequired()
+                .HasMaxLength(250);
+            entity.Property(e => e.WorkName)
+                .IsRequired()
+                .HasMaxLength(100);
+            entity.Property(e => e.MonthlyIncome)
+                .IsRequired()
+                .HasColumnType("decimal(18,2)");
         });
 
         // Configuración de Role

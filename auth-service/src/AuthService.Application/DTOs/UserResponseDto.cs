@@ -8,6 +8,10 @@ public class UserResponseDto
     public string Username { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public string Phone { get; set; } = string.Empty;
+    public string DPI { get; set; } = string.Empty;
+    public string Address { get; set; } = string.Empty;
+    public string WorkName { get; set; } = string.Empty;
+    public decimal MonthlyIncome { get; set; }
     public string Role { get; set; } = string.Empty;
     public bool Status { get; set; }
     public bool IsEmailVerified { get; set; }

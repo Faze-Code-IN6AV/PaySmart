@@ -13,9 +13,9 @@ public interface IUserRepository
     Task<User?> GetByPasswordResetTokenAsync (string token);
     Task<bool> ExistsByEmailAsync (string email);
     Task<bool> ExistsByUsernameAsync (string username);
+    Task<bool> ExistsByDpiAsync(string dpi);
     Task<User> UpdateUserAsync (User user);
     Task<bool> DeleteUserAsync (string id);
     Task UpdateUserRoleAsync (string userId, string roleId);
-
-    
+    Task<IReadOnlyList<User>> GetAllClientUsersAsync();
 }

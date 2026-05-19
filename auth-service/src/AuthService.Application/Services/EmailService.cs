@@ -50,6 +50,25 @@ public class EmailService(IConfiguration configuration, ILogger<EmailService> lo
         await SendEmailAsync(email, subject, body);
     }
 
+    public async Task SendClientCreatedAsync(string email, string username, string password)
+    {
+        var subject = "¡Tu cuenta en PaySmart ha sido creada!";
+        var body = $@"
+            <div style='font-family:Arial,sans-serif;max-width:500px;margin:auto;padding:24px;background:#0B1830;color:#FFFFFF;border-radius:12px;'>
+                <h2 style='color:#41D2F2;'>¡Bienvenido a PaySmart, {username}!</h2>
+                <p>El administrador del banco ha creado tu cuenta exitosamente.</p>
+                <p>Aquí están tus credenciales de acceso:</p>
+                <div style='background:#162C5F;padding:16px;border-radius:8px;margin:16px 0;border:1px solid #41D2F2;'>
+                    <p style='margin:4px 0;'><strong style='color:#41D2F2;'>Usuario:</strong> {username}</p>
+                    <p style='margin:4px 0;'><strong style='color:#41D2F2;'>Contraseña temporal:</strong> {password}</p>
+                </div>
+                <p style='color:#FFE968;font-size:0.85em;'>Por seguridad, te recomendamos cambiar tu contraseña contactando al banco.</p>
+                <p>Si tienes alguna pregunta, comunícate con el banco directamente.</p>
+            </div>
+        ";
+        await SendEmailAsync(email, subject, body);
+    }
+
     public async Task SendWelcomeEmailAsync(string email, string username)
     {
         var subject = "¡Bienvenido a PaySmart!";
@@ -175,4 +194,3 @@ public class EmailService(IConfiguration configuration, ILogger<EmailService> lo
         }
     }
 }
-

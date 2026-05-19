@@ -24,7 +24,7 @@ public class UserRole
     [Required]
     public User User {get; set;} = null!;
 
-   [Required]
+    [Required]
     public Role Role {get; set;} = null!;
     
 }

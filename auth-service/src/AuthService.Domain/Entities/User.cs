@@ -33,6 +33,17 @@ public class User
 
     public bool Status {get; set;} = false;
 
+    /// <summary>
+    /// Borrado lógico. Nunca se eliminan registros físicamente de la BD
+    /// por razones legales y de auditoría bancaria.
+    /// </summary>
+    public bool IsDeleted { get; set; } = false;
+
+    /// <summary>
+    /// Fecha en que se realizó el borrado lógico. Null si el usuario está activo.
+    /// </summary>
+    public DateTime? DeletedAt { get; set; } = null;
+
     public DateTime CreatedAt {get; set;} = DateTime.UtcNow;
 
     public DateTime UpdatedAt {get; set;} = DateTime.UtcNow;

@@ -26,6 +26,28 @@ builder.Services.AddControllers()
     o.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
 });
 
+// Unificar errores de validación de modelo al mismo formato { success, message, errorCode }
+builder.Services.Configure<Microsoft.AspNetCore.Mvc.ApiBehaviorOptions>(options =>
+{
+    options.InvalidModelStateResponseFactory = context =>
+    {
+        var errors = context.ModelState
+            .Where(e => e.Value?.Errors.Count > 0)
+            .SelectMany(e => e.Value!.Errors.Select(x => x.ErrorMessage))
+            .ToList();
+
+        var result = new
+        {
+            success = false,
+            message = errors.FirstOrDefault() ?? "Datos de entrada inválidos",
+            errorCode = "VALIDATION_ERROR",
+            errors
+        };
+
+        return new Microsoft.AspNetCore.Mvc.BadRequestObjectResult(result);
+    };
+});
+
 // Configure services through extension methods
 builder.Services.AddApiDocumentation();
 builder.Services.AddApplicationServices(builder.Configuration);

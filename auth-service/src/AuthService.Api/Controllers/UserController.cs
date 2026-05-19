@@ -28,15 +28,92 @@ public class UsersController(IUserManagementService userManagementService) : Con
         return roles.Contains(RoleConstants.ADMIN_ROLE);
     }
 
+    private string? GetCurrentUserId() =>
+        User.Claims.FirstOrDefault(c =>
+            c.Type == "sub" ||
+            c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
+
+    // ─── Listar todos los clientes ─────────────────────────────────────────────
     /// <summary>
-    /// Actualizar el rol de un usuario. Solo accesible por ADMIN_ROLE.
+    /// [ADMIN] Obtener todos los clientes (USER_ROLE) del banco.
     /// </summary>
-    /// <param name="userId">ID del usuario a actualizar.</param>
-    /// <param name="dto">Nuevo rol a asignar. Valores válidos: <c>ADMIN_ROLE</c>, <c>USER_ROLE</c>.</param>
-    /// <response code="200">Rol actualizado exitosamente.</response>
-    /// <response code="401">No autenticado.</response>
-    /// <response code="403">No tienes permisos de administrador.</response>
-    /// <response code="404">Usuario no encontrado.</response>
+    [HttpGet("clients")]
+    [Authorize]
+    [EnableRateLimiting("ApiPolicy")]
+    [ProducesResponseType(typeof(IReadOnlyList<UserResponseDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<IReadOnlyList<UserResponseDto>>> GetAllClients()
+    {
+        if (!await CurrentUserIsAdmin())
+            return StatusCode(403, new { success = false, message = "Forbidden" });
+
+        var clients = await userManagementService.GetAllClientsAsync();
+        return Ok(new { success = true, data = clients });
+    }
+
+    // ─── Ver cliente por ID ────────────────────────────────────────────────────
+    /// <summary>
+    /// [ADMIN] Obtener datos completos de un cliente por su ID, incluyendo saldo y perfil.
+    /// </summary>
+    [HttpGet("clients/{userId}")]
+    [Authorize]
+    [EnableRateLimiting("ApiPolicy")]
+    [ProducesResponseType(typeof(UserResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<UserResponseDto>> GetClientById(string userId)
+    {
+        if (!await CurrentUserIsAdmin())
+            return StatusCode(403, new { success = false, message = "Forbidden" });
+
+        var client = await userManagementService.GetClientByIdAsync(userId);
+        return Ok(new { success = true, data = client });
+    }
+
+    // ─── Editar cliente ────────────────────────────────────────────────────────
+    /// <summary>
+    /// [ADMIN] Editar datos de un cliente. No permite modificar DPI ni contraseña.
+    /// </summary>
+    [HttpPut("clients/{userId}")]
+    [Authorize]
+    [EnableRateLimiting("ApiPolicy")]
+    [ProducesResponseType(typeof(UserResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<UserResponseDto>> UpdateClient(string userId, [FromBody] UpdateClientProfileDto dto)
+    {
+        if (!await CurrentUserIsAdmin())
+            return StatusCode(403, new { success = false, message = "Forbidden" });
+
+        var result = await userManagementService.UpdateClientProfileAsync(userId, dto);
+        return Ok(new { success = true, message = "Cliente actualizado exitosamente", data = result });
+    }
+
+    // ─── Eliminar cliente ──────────────────────────────────────────────────────
+    /// <summary>
+    /// [ADMIN] Eliminar un cliente. No puede eliminar a otro administrador.
+    /// </summary>
+    [HttpDelete("clients/{userId}")]
+    [Authorize]
+    [EnableRateLimiting("ApiPolicy")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult> DeleteClient(string userId)
+    {
+        if (!await CurrentUserIsAdmin())
+            return StatusCode(403, new { success = false, message = "Forbidden" });
+
+        var adminId = GetCurrentUserId() ?? string.Empty;
+        await userManagementService.DeleteClientAsync(adminId, userId);
+        return Ok(new { success = true, message = "Cliente eliminado exitosamente" });
+    }
+
+    // ─── Cambiar rol de usuario ────────────────────────────────────────────────
+    /// <summary>
+    /// [ADMIN] Actualizar el rol de un usuario.
+    /// </summary>
     [HttpPut("{userId}/role")]
     [Authorize]
     [EnableRateLimiting("ApiPolicy")]
@@ -56,10 +133,6 @@ public class UsersController(IUserManagementService userManagementService) : Con
     /// <summary>
     /// Obtener los roles asignados a un usuario específico.
     /// </summary>
-    /// <param name="userId">ID del usuario a consultar.</param>
-    /// <response code="200">Lista de roles del usuario.</response>
-    /// <response code="401">No autenticado.</response>
-    /// <response code="404">Usuario no encontrado.</response>
     [HttpGet("{userId}/roles")]
     [Authorize]
     [ProducesResponseType(typeof(IReadOnlyList<string>), StatusCodes.Status200OK)]
@@ -72,12 +145,8 @@ public class UsersController(IUserManagementService userManagementService) : Con
     }
 
     /// <summary>
-    /// Obtener todos los usuarios que tienen un rol específico. Solo accesible por ADMIN_ROLE.
+    /// [ADMIN] Obtener todos los usuarios que tienen un rol específico.
     /// </summary>
-    /// <param name="roleName">Nombre del rol a filtrar. Ejemplo: <c>ADMIN_ROLE</c> o <c>USER_ROLE</c>.</param>
-    /// <response code="200">Lista de usuarios con el rol indicado.</response>
-    /// <response code="401">No autenticado.</response>
-    /// <response code="403">No tienes permisos de administrador.</response>
     [HttpGet("by-role/{roleName}")]
     [Authorize]
     [EnableRateLimiting("ApiPolicy")]
