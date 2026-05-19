@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { login as loginRequest, register as registerRequest } from '../../../shared/api';
+import { login as loginRequest } from '../../../shared/api';
+import { getProfile } from '../../../shared/api/auth.js';
 import { showError } from '../../../shared/utils/toast.js';
 import { useAccountStore } from '../../account/store/accountStore.js';
 
@@ -95,6 +96,17 @@ export const useAuthStore = create(
             error: null,
           });
 
+          // Cargar perfil completo (DPI, dirección, ingresos, etc.) en background
+          try {
+            const profileRes = await getProfile();
+            const fullProfile = profileRes.data?.data ?? profileRes.data;
+            if (fullProfile) {
+              set((state) => ({ user: { ...state.user, ...fullProfile } }));
+            }
+          } catch {
+            // No bloquear el login si falla cargar el perfil completo
+          }
+
           return { success: true, role };
         } catch (err) {
           const message = err.response?.data?.message || 'Error al iniciar sesión';
@@ -119,6 +131,9 @@ export const useAuthStore = create(
           return { success: false, error: message };
         }
       },
+
+      // Actualizar datos del usuario en el store (tras editar perfil, etc.)
+      setUser: (updatedUser) => set({ user: updatedUser }),
     }),
     { name: 'auth-PS-store' }
   )

@@ -1,16 +1,31 @@
 import { useState } from 'react';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
-import { CreditCardIcon, ArrowRightStartOnRectangleIcon, Bars3Icon, XMarkIcon, ShieldCheckIcon, HomeIcon, CubeIcon } from '@heroicons/react/24/outline';
+import {
+  CreditCardIcon, ArrowRightStartOnRectangleIcon, Bars3Icon, XMarkIcon,
+  ShieldCheckIcon, HomeIcon, CubeIcon, UserGroupIcon, UserCircleIcon,
+  DocumentChartBarIcon,
+} from '@heroicons/react/24/outline';
+import { StarIcon } from '@heroicons/react/24/outline';
 import { useAuthStore } from '../../features/auth/store/authStore.js';
 import logo from '../../assets/img/paysmart_logo.png';
-import { StarIcon } from '@heroicons/react/24/outline';
 
-const NAV_ITEMS = [
-  { path: '/dashboard', label: 'Inicio', Icon: HomeIcon, exact: true },
-  { path: '/dashboard/accounts', label: 'Cuentas', Icon: CreditCardIcon },
-  { path: '/dashboard/transactions', label: 'Transacciones', Icon: CreditCardIcon },
-  { path: '/dashboard/products', label: 'Productos', Icon: CubeIcon },
-  { path: '/dashboard/favorites', label: 'Favoritas', Icon: StarIcon },
+// Ítems de navegación para el ADMIN
+const ADMIN_NAV = [
+  { path: '/dashboard',          label: 'Inicio',        Icon: HomeIcon,             exact: true },
+  { path: '/dashboard/clients',  label: 'Clientes',      Icon: UserGroupIcon },
+  { path: '/dashboard/accounts', label: 'Cuentas',       Icon: CreditCardIcon },
+  { path: '/dashboard/transactions', label: 'Transacciones', Icon: DocumentChartBarIcon },
+  { path: '/dashboard/products', label: 'Productos',     Icon: CubeIcon },
+];
+
+// Ítems de navegación para el CLIENTE
+const CLIENT_NAV = [
+  { path: '/dashboard',              label: 'Inicio',        Icon: HomeIcon,         exact: true },
+  { path: '/dashboard/accounts',     label: 'Mis Cuentas',   Icon: CreditCardIcon },
+  { path: '/dashboard/transactions', label: 'Transacciones', Icon: DocumentChartBarIcon },
+  { path: '/dashboard/products',     label: 'Productos',     Icon: CubeIcon },
+  { path: '/dashboard/favorites',    label: 'Favoritas',     Icon: StarIcon },
+  { path: '/dashboard/profile',      label: 'Mi Perfil',     Icon: UserCircleIcon },
 ];
 
 export const DashboardLayout = () => {
@@ -22,13 +37,12 @@ export const DashboardLayout = () => {
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const handleLogout = () => {
-    logout();
-    navigate('/');
-  };
+  const handleLogout = () => { logout(); navigate('/'); };
 
   const isActive = (path, exact) =>
     exact ? location.pathname === path : location.pathname.startsWith(path);
+
+  const navItems = isAdmin ? ADMIN_NAV : CLIENT_NAV;
 
   return (
     <div className='h-screen flex overflow-hidden' style={{ backgroundColor: '#0B1830' }}>
@@ -39,12 +53,8 @@ export const DashboardLayout = () => {
         style={{ backgroundColor: '#162C5F', borderRight: '1px solid rgba(65,210,242,0.12)' }}
       >
         <SidebarContent
-          user={user}
-          isAdmin={isAdmin}
-          navItems={NAV_ITEMS}
-          isActive={isActive}
-          navigate={navigate}
-          onLogout={handleLogout}
+          user={user} isAdmin={isAdmin} navItems={navItems}
+          isActive={isActive} navigate={navigate} onLogout={handleLogout}
         />
       </aside>
 
@@ -61,9 +71,7 @@ export const DashboardLayout = () => {
             style={{ backgroundColor: '#162C5F', borderRight: '1px solid rgba(65,210,242,0.15)' }}
           >
             <SidebarContent
-              user={user}
-              isAdmin={isAdmin}
-              navItems={NAV_ITEMS}
+              user={user} isAdmin={isAdmin} navItems={navItems}
               isActive={isActive}
               navigate={(path) => { navigate(path); setSidebarOpen(false); }}
               onLogout={handleLogout}
@@ -80,7 +88,6 @@ export const DashboardLayout = () => {
           className='sticky top-0 z-30 flex items-center justify-between px-4 lg:px-8 py-3.5'
           style={{ backgroundColor: '#162C5F', borderBottom: '1px solid rgba(65,210,242,0.1)' }}
         >
-          {/* Hamburger — mobile */}
           <button
             className='lg:hidden p-2 rounded-lg'
             style={{ color: '#41D2F2' }}
@@ -89,14 +96,10 @@ export const DashboardLayout = () => {
             <Bars3Icon className='w-5 h-5' />
           </button>
 
-          {/* Page title area */}
           <div className='flex-1 px-4 lg:px-0'>
-            <span className='text-sm font-medium' style={{ color: 'rgba(255,255,255,0.5)' }}>
-              PaySmart
-            </span>
+            <span className='text-sm font-medium' style={{ color: 'rgba(255,255,255,0.5)' }}>PaySmart</span>
           </div>
 
-          {/* Role chip */}
           {isAdmin ? (
             <div
               className='flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold'
@@ -124,27 +127,21 @@ export const DashboardLayout = () => {
   );
 };
 
-// ——— Sidebar content (shared between desktop + mobile) ———
+// ——— Sidebar content ———
 const SidebarContent = ({ user, isAdmin, navItems, isActive, navigate, onLogout }) => (
   <div className='flex flex-col h-full'>
-    {/* Logo */}
     <div className='px-5 py-5 flex justify-center items-center gap-3' style={{ borderBottom: '1px solid rgba(65,210,242,0.1)' }}>
       <img src={logo} alt='PaySmart' className='h-20 w-auto object-contain' />
     </div>
 
-    {/* User card */}
     <div className='px-4 py-4' style={{ borderBottom: '1px solid rgba(65,210,242,0.08)' }}>
       <div
         className='rounded-xl px-3 py-3 flex items-center gap-3'
         style={{ backgroundColor: isAdmin ? 'rgba(255,233,104,0.08)' : 'rgba(65,210,242,0.08)' }}
       >
-        {/* Avatar */}
         <div
           className='w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0'
-          style={{
-            backgroundColor: isAdmin ? 'rgba(255,233,104,0.2)' : 'rgba(65,210,242,0.2)',
-            color: isAdmin ? '#FFE968' : '#41D2F2',
-          }}
+          style={{ backgroundColor: isAdmin ? 'rgba(255,233,104,0.2)' : 'rgba(65,210,242,0.2)', color: isAdmin ? '#FFE968' : '#41D2F2' }}
         >
           {(user?.firstName?.[0] ?? user?.username?.[0] ?? 'U').toUpperCase()}
         </div>
@@ -155,20 +152,15 @@ const SidebarContent = ({ user, isAdmin, navItems, isActive, navigate, onLogout 
           {isAdmin ? (
             <div className='flex items-center gap-1 mt-0.5'>
               <ShieldCheckIcon className='w-3 h-3 flex-shrink-0' style={{ color: '#FFE968' }} />
-              <span className='text-xs font-semibold' style={{ color: '#FFE968' }}>
-                Cuenta Admin
-              </span>
+              <span className='text-xs font-semibold' style={{ color: '#FFE968' }}>Cuenta Admin</span>
             </div>
           ) : (
-            <span className='text-xs' style={{ color: 'rgba(65,210,242,0.7)' }}>
-              Usuario
-            </span>
+            <span className='text-xs' style={{ color: 'rgba(65,210,242,0.7)' }}>Usuario</span>
           )}
         </div>
       </div>
     </div>
 
-    {/* Nav */}
     <nav className='flex-1 px-3 py-4 space-y-1'>
       {navItems.map(({ path, label, Icon, exact }) => {
         const active = isActive(path, exact);
@@ -190,7 +182,6 @@ const SidebarContent = ({ user, isAdmin, navItems, isActive, navigate, onLogout 
       })}
     </nav>
 
-    {/* Logout */}
     <div className='px-3 pb-5' style={{ borderTop: '1px solid rgba(65,210,242,0.08)', paddingTop: '1rem' }}>
       <button
         onClick={onLogout}
