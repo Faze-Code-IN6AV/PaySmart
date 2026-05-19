@@ -10,6 +10,7 @@ import {
     ExclamationCircleIcon,
 } from '@heroicons/react/24/outline';
 import { useReport } from '../hooks/useReport.js';
+import { CurrencyConverter } from '../../../shared/components/CurrencyConverter.jsx';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -120,13 +121,14 @@ export const ReportPage = () => {
     const [overviewLimit, setOverviewLimit] = useState(5);
 
     if (!isAdmin) return (
-        <div className='flex flex-col items-center justify-center h-64'>
-            <p className='text-lg font-semibold' style={{ color: 'rgba(255,255,255,0.5)' }}>
-                Bienvenido a PaySmart
-            </p>
-            <p className='text-sm mt-2' style={{ color: 'rgba(255,255,255,0.3)' }}>
-                Selecciona una sección del menú lateral
-            </p>
+        <div className='flex flex-col gap-6'>
+            <div>
+                <h1 className='text-2xl font-bold' style={{ color: '#FFFFFF' }}>Bienvenido a PaySmart</h1>
+                <p className='text-sm mt-1' style={{ color: '#41D2F2' }}>
+                    Selecciona una sección del menú lateral para continuar
+                </p>
+            </div>
+            <CurrencyConverter />
         </div>
     );
 

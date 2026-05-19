@@ -9,15 +9,19 @@ import {
     suspendAccount as suspendAccountRequest,
     activateAccount as activateAccountRequest,
     deactivateAccount as deactivateAccountRequest,
+    adminCreateAccountForUser as adminCreateAccountForUserRequest,
 } from '../../../shared/api';
+import { getAllClients } from '../../../shared/api/admin';
 import { showError, showSuccess, showWarning } from '../../../shared/utils/toast.js';
 
-export const useAccountStore = create((set) => ({
+export const useAccountStore = create((set, get) => ({
     accounts: [],
     loading: false,
     error: null,
     searchResults: [],
     searchLoading: false,
+    // Cliente encontrado por búsqueda (para el admin)
+    foundClient: null,
 
     // GET mis cuentas — filtra las CERRADAS para el usuario
     fetchAccounts: async () => {
@@ -92,7 +96,70 @@ export const useAccountStore = create((set) => ({
         }
     },
 
-    // GET cuentas por email (ADMIN_ROLE)
+    // Buscar cliente por email, username o DPI (ADMIN_ROLE)
+    searchClient: async (query) => {
+        try {
+            set({ searchLoading: true, searchResults: [], foundClient: null });
+
+            // Traer todos los clientes y filtrar localmente por email, username o DPI
+            const res = await getAllClients();
+            const allClients = res.data?.data ?? res.data ?? [];
+            const q = query.trim().toLowerCase();
+
+            const match = allClients.find(
+                (c) =>
+                    c.email?.toLowerCase() === q ||
+                    c.username?.toLowerCase() === q ||
+                    c.dpi === query.trim()
+            );
+
+            if (!match) {
+                set({ searchLoading: false, searchResults: [], foundClient: null });
+                showWarning('No se encontró ningún cliente con ese dato');
+                return { success: false };
+            }
+
+            // Mostrar el cliente encontrado inmediatamente
+            set({ foundClient: match });
+
+            // Intentar cargar sus cuentas — si no tiene, simplemente lista vacía
+            try {
+                const { data } = await getAccountsByEmailRequest(match.email);
+                set({
+                    searchResults: data.data ?? [],
+                    searchLoading: false,
+                });
+            } catch {
+                // Cliente sin cuentas aún — no es un error, solo lista vacía
+                set({ searchResults: [], searchLoading: false });
+            }
+
+            return { success: true, client: match };
+        } catch (err) {
+            const message = err.response?.data?.message || 'Error al buscar cliente';
+            set({ searchLoading: false, searchResults: [], foundClient: null });
+            showError(message);
+            return { success: false, error: message };
+        }
+    },
+
+    // [ADMIN] Crear cuenta bancaria para el cliente encontrado
+    adminCreateForUser: async ({ userId, email, accountType }) => {
+        try {
+            const { data } = await adminCreateAccountForUserRequest({ userId, email, accountType });
+            // Refrescar las cuentas del cliente tras crear
+            const accountsRes = await getAccountsByEmailRequest(email);
+            set({ searchResults: accountsRes.data?.data ?? [] });
+            showSuccess(data.message || 'Cuenta creada exitosamente');
+            return { success: true };
+        } catch (err) {
+            const message = err.response?.data?.message || 'Error al crear la cuenta';
+            showError(message);
+            return { success: false, error: message };
+        }
+    },
+
+    // GET cuentas por email (ADMIN_ROLE) — mantener para compatibilidad
     searchByEmail: async (email) => {
         try {
             set({ searchLoading: true, searchResults: [] });
@@ -164,6 +231,6 @@ export const useAccountStore = create((set) => ({
         }
     },
 
-    clearSearch: () => set({ searchResults: [] }),
+    clearSearch: () => set({ searchResults: [], foundClient: null }),
     clearError: () => set({ error: null }),
 }));

@@ -97,6 +97,12 @@ const handleResponseError = async (error) => {
     return handleExpiredSession(error);
   }
 
+  // Asegurarse de que el mensaje del backend llegue al catch del llamador
+  // El backend retorna { success, message, errorCode } — lo preservamos aquí
+  if (error.response?.data?.message && !error.response.data.message.includes('unexpected')) {
+    error.message = error.response.data.message;
+  }
+
   return Promise.reject(error);
 };
 

@@ -6,11 +6,9 @@ export const login = async (data) => {
   return await axiosAuth.post('/auth/login', data);
 };
 
-// POST /api/v1/auth/register  (multipart/form-data)
+// POST /api/v1/auth/register (registro público)
 export const register = async (data) => {
-  return await axiosAuth.post('/auth/register', data, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  });
+  return await axiosAuth.post('/auth/register', data);
 };
 
 // POST /api/v1/auth/verify-email
@@ -36,4 +34,10 @@ export const resetPassword = async (token, newPassword) => {
 // GET /api/v1/auth/profile  (requiere token)
 export const getProfile = async () => {
   return await axiosAuth.get('/auth/profile');
-}
+};
+
+// PUT /api/v1/auth/profile — el cliente edita su propio perfil
+// Solo permite: name, surname, address, workName, monthlyIncome
+export const updateMyProfile = async (data) => {
+  return await axiosAuth.put('/auth/profile', data);
+};

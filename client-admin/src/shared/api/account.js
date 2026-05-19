@@ -25,6 +25,11 @@ export const updateBalanceInternal = async (accountNumber, { amount, type }) => 
     return await axiosAccount.patch(`/account/internal/${accountNumber}/balance`, { amount, type });
 };
 
+// [ADMIN] Crear cuenta bancaria para un cliente específico
+export const adminCreateAccountForUser = async ({ userId, email, accountType }) => {
+    return await axiosAccount.post('/account/admin/create-for-user', { userId, email, accountType });
+};
+
 // GET /paySmart/v1/account/admin/user/:email — Cuentas por email (solo ADMIN_ROLE)
 export const getAccountsByEmail = async (email) => {
     return await axiosAccount.get(`/account/admin/user/${encodeURIComponent(email)}`);

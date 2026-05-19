@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
     ArrowDownCircleIcon,
     ArrowUpCircleIcon,
@@ -44,15 +44,31 @@ export const TransactionCard = ({ transaction, showReverseButton = false }) => {
     const { Icon, label, gradient, accent, symbol } = cfg;
     const statusBadge = STATUS_BADGE[transaction.status] ?? STATUS_BADGE.COMPLETADA;
 
-    const diffSeconds = transaction.createdAt
-        ? (Date.now() - new Date(transaction.createdAt).getTime()) / 1000
-        : Infinity;
+    // Usar state para que el botón desaparezca automáticamente al cumplirse el minuto
+    const [secondsElapsed, setSecondsElapsed] = useState(
+        transaction.createdAt
+            ? (Date.now() - new Date(transaction.createdAt).getTime()) / 1000
+            : Infinity
+    );
+
+    useEffect(() => {
+        if (!showReverseButton || transaction.type !== 'DEPOSIT') return;
+        if (secondsElapsed >= 60) return;
+
+        const interval = setInterval(() => {
+            const elapsed = (Date.now() - new Date(transaction.createdAt).getTime()) / 1000;
+            setSecondsElapsed(elapsed);
+            if (elapsed >= 60) clearInterval(interval);
+        }, 1000);
+
+        return () => clearInterval(interval);
+    }, [showReverseButton, transaction.createdAt, transaction.type]);
 
     const canReverse =
         showReverseButton &&
         transaction.type === 'DEPOSIT' &&
         transaction.status !== 'REVERTIDA' &&
-        diffSeconds < 60;
+        secondsElapsed < 60;
 
     const formattedAmount = Number(transaction.amount ?? 0).toLocaleString('es-GT', {
         minimumFractionDigits: 2,
@@ -151,7 +167,7 @@ export const TransactionCard = ({ transaction, showReverseButton = false }) => {
                             style={{ backgroundColor: 'rgba(252,165,165,0.12)', color: '#fca5a5', border: '1px solid rgba(252,165,165,0.2)' }}
                         >
                             <ArrowUturnLeftIcon className='w-3.5 h-3.5' />
-                            Revertir
+                            Revertir ({Math.max(0, Math.floor(60 - secondsElapsed))}s)
                         </button>
                     )}
                 </div>

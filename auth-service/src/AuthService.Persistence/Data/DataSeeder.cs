@@ -8,7 +8,7 @@ namespace AuthService.persistence.Data;
 
 public static class DataSeeder
 {
-     public static async Task SeedAsync(ApplicationDbContext context)
+    public static async Task SeedAsync(ApplicationDbContext context)
     {
         if(!context.Roles.Any())
         {
@@ -39,23 +39,29 @@ public static class DataSeeder
                 var userId = UuidGenerator.GenerateUserId();
                 var profileId = UuidGenerator.GenerateUserId();
                 var emailId = UuidGenerator.GenerateUserId();
-                var userRoleId =UuidGenerator.GenerateUserId();
+                var userRoleId = UuidGenerator.GenerateUserId();
+                var passwordResetId = UuidGenerator.GenerateUserId();
 
                 var adminUser = new User
                 {
                     Id = userId,
-                    Name = "Admin User",
-                    Surname ="Admin Surname",
-                    Username = "admin",
-                    Email = "paysmart@local.com",
-                    Password = passwordHasher.HashPassword("paysmart!"),
+                    Name = "Admin",
+                    Surname = "Banco",
+                    // Credenciales requeridas: Usuario ADMINB / Password ADMINB
+                    Username = "ADMINB",
+                    Email = "adminb@paysmart.com",
+                    Password = passwordHasher.HashPassword("ADMINB"),
                     Status = true,
 
                     UserProfile = new UserProfile
                     {
                         Id = profileId,
                         UserId = userId,
-                        Phone = "00000000"
+                        Phone = "00000000",
+                        DPI = "0000000000000",
+                        Address = "Sede Central PaySmart",
+                        WorkName = "PaySmart Bank",
+                        MonthlyIncome = 50000
                     },
 
                     UserEmail = new UserEmail
@@ -65,6 +71,14 @@ public static class DataSeeder
                         EmailVerified = true,
                         EmailVerificationToken = null,
                         EmailVerificationTokenExpiry = null
+                    },
+
+                    UserPasswordReset = new UserPasswordReset
+                    {
+                        Id = passwordResetId,
+                        UserId = userId,
+                        PasswordResetToken = null,
+                        PasswordResetTokenExpiry = null
                     },
 
                     UserRoles =

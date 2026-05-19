@@ -3,7 +3,7 @@ import { useAuthStore } from '../store/authStore.js';
 import { useNavigate } from 'react-router-dom';
 import { showSuccess, showError } from '../../../shared/utils/toast.js';
 
-export const LoginForm = ({ onForgot, onRegister }) => {
+export const LoginForm = ({ onForgot }) => {
   const navigate = useNavigate();
   const login = useAuthStore((state) => state.login);
   const loading = useAuthStore((state) => state.loading);
@@ -87,18 +87,6 @@ export const LoginForm = ({ onForgot, onRegister }) => {
           style={{ color: '#41D2F2' }}
         >
           ¿Olvidaste tu contraseña?
-        </button>
-      </p>
-
-      <p className='text-center text-sm' style={{ color: '#FFFFFF' }}>
-        ¿No tienes cuenta?{' '}
-        <button
-          type='button'
-          onClick={onRegister}
-          className='hover:underline cursor-pointer font-semibold'
-          style={{ color: '#FFE968' }}
-        >
-          Regístrate aquí
         </button>
       </p>
     </form>

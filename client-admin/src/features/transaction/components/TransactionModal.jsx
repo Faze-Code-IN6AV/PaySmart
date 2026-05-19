@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import {
     XMarkIcon,
@@ -7,13 +7,14 @@ import {
     ShoppingBagIcon,
 } from '@heroicons/react/24/outline';
 
-const TRANSACTION_TYPES = [
+const ALL_TYPES = [
     {
         value: 'DEPOSIT',
         label: 'Depósito',
         Icon: ArrowDownCircleIcon,
         accent: '#41D2F2',
         description: 'Agregar saldo a la cuenta',
+        adminOnly: true,
     },
     {
         value: 'TRANSFER',
@@ -31,13 +32,17 @@ const TRANSACTION_TYPES = [
     },
 ];
 
-export const TransactionModal = ({ isOpen, onClose, onSubmit, loading = false, defaultAccountNumber = '' }) => {
-    const [tab, setTab] = useState('DEPOSIT');
+export const TransactionModal = ({ isOpen, onClose, onSubmit, loading = false, defaultAccountNumber = '', isAdmin = false, myAccounts = [] }) => {
+    const TRANSACTION_TYPES = ALL_TYPES.filter((t) => !t.adminOnly || isAdmin);
+
+    const [tab, setTab] = useState(isAdmin ? 'DEPOSIT' : 'TRANSFER');
 
     const {
         register,
         handleSubmit,
         reset,
+        watch,
+        setValue,
         formState: { errors },
     } = useForm({
         defaultValues: {
@@ -48,12 +53,36 @@ export const TransactionModal = ({ isOpen, onClose, onSubmit, loading = false, d
         },
     });
 
+    // Cuando el modal abre, asignar la cuenta por defecto y el tab correcto
+    useEffect(() => {
+        if (isOpen) {
+            const defaultTab = isAdmin ? 'DEPOSIT' : 'TRANSFER';
+            setTab(defaultTab);
+            reset({
+                accountNumber: defaultAccountNumber,
+                toAccountNumber: '',
+                amount: '',
+                description: '',
+            });
+        }
+    }, [isOpen]);
+
     const currentType = TRANSACTION_TYPES.find((t) => t.value === tab);
     const accent = currentType?.accent ?? '#41D2F2';
 
+    const watchAccountNumber = watch('accountNumber');
+
+    const handleTabChange = (newTab) => {
+        setTab(newTab);
+        // Preservar la cuenta de origen al cambiar de tab
+        setValue('toAccountNumber', '');
+        setValue('amount', '');
+        setValue('description', '');
+    };
+
     const handleClose = () => {
         reset();
-        setTab('DEPOSIT');
+        setTab(isAdmin ? 'DEPOSIT' : 'TRANSFER');
         onClose();
     };
 
@@ -67,8 +96,8 @@ export const TransactionModal = ({ isOpen, onClose, onSubmit, loading = false, d
         };
         const res = await onSubmit(payload);
         if (res?.success) {
-            reset();
-            setTab('DEPOSIT');
+            reset({ accountNumber: defaultAccountNumber, toAccountNumber: '', amount: '', description: '' });
+            setTab(isAdmin ? 'DEPOSIT' : 'TRANSFER');
         }
     };
 
@@ -113,7 +142,7 @@ export const TransactionModal = ({ isOpen, onClose, onSubmit, loading = false, d
                                     <button
                                         key={value}
                                         type='button'
-                                        onClick={() => setTab(value)}
+                                        onClick={() => handleTabChange(value)}
                                         className='relative rounded-xl p-3 text-center transition-all flex flex-col items-center gap-1.5'
                                         style={{
                                             backgroundColor: isSelected ? `${a}18` : 'rgba(11,24,48,0.6)',
@@ -134,13 +163,29 @@ export const TransactionModal = ({ isOpen, onClose, onSubmit, loading = false, d
                         <label className='block text-sm font-medium mb-1.5' style={{ color: '#FFFFFF' }}>
                             {tab === 'TRANSFER' ? 'Cuenta origen' : 'Número de cuenta'}
                         </label>
-                        <input
-                            type='text'
-                            placeholder='ACC-000123'
-                            className='w-full px-3 py-2 text-sm border rounded-lg focus:outline-none'
-                            style={{ backgroundColor: '#0B1830', borderColor: accent, color: '#FFFFFF' }}
-                            {...register('accountNumber', { required: 'El número de cuenta es obligatorio' })}
-                        />
+                        {/* Cliente: solo puede usar sus propias cuentas como origen */}
+                        {!isAdmin && myAccounts.length > 0 ? (
+                            <select
+                                className='w-full px-3 py-2 text-sm border rounded-lg focus:outline-none'
+                                style={{ backgroundColor: '#0B1830', borderColor: accent, color: '#FFFFFF' }}
+                                {...register('accountNumber', { required: 'Selecciona una cuenta de origen' })}
+                            >
+                                <option value=''>— Selecciona tu cuenta —</option>
+                                {myAccounts.map((acc) => (
+                                    <option key={acc._id} value={acc.accountNumber}>
+                                        {acc.accountType} · {acc.accountNumber} · Q{Number(acc.balance).toFixed(2)}
+                                    </option>
+                                ))}
+                            </select>
+                        ) : (
+                            <input
+                                type='text'
+                                placeholder='ACC-000123'
+                                className='w-full px-3 py-2 text-sm border rounded-lg focus:outline-none'
+                                style={{ backgroundColor: '#0B1830', borderColor: accent, color: '#FFFFFF' }}
+                                {...register('accountNumber', { required: 'El número de cuenta es obligatorio' })}
+                            />
+                        )}
                         {errors.accountNumber && (
                             <p className='text-red-400 text-xs mt-1'>{errors.accountNumber.message}</p>
                         )}
@@ -158,10 +203,11 @@ export const TransactionModal = ({ isOpen, onClose, onSubmit, loading = false, d
                                 style={{ backgroundColor: '#0B1830', borderColor: '#FFE968', color: '#FFFFFF' }}
                                 {...register('toAccountNumber', {
                                     required: tab === 'TRANSFER' ? 'La cuenta destino es obligatoria' : false,
-                                    validate: (val) =>
-                                        tab !== 'TRANSFER' ||
-                                        val.trim() !== watch('accountNumber').trim() ||
-                                        'La cuenta destino no puede ser la misma que la cuenta origen',
+                                    validate: (val) => {
+                                        if (tab !== 'TRANSFER') return true;
+                                        if (!val || !watchAccountNumber) return true;
+                                        return val.trim() !== watchAccountNumber.trim() || 'La cuenta destino no puede ser la misma que la cuenta origen';
+                                    },
                                 })}
                             />
                             {errors.toAccountNumber && (

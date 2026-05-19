@@ -4,10 +4,17 @@ import axios from 'axios';
 import Transaction, { TRANSACTION_TYPES } from './transaction.model.js';
 import nodemailer from 'nodemailer';
 
-// URL base de account-service
-const ACCOUNT_SERVICE_URL = 'http://localhost:3001/paySmart/v1/account';
+// URL del account-service desde variables de entorno (no hardcodeado)
+const ACCOUNT_SERVICE_URL = process.env.ACCOUNT_SERVICE_URL || 'http://localhost:3001/paySmart/v1/account';
 const MAX_TRANSFER_PER_TRANSACTION = 2000;
 const MAX_DAILY_TRANSFER = 10000;
+
+// Axios con API Key interna para comunicación entre servicios
+const internalAxios = axios.create();
+internalAxios.interceptors.request.use((config) => {
+    config.headers['X-Internal-Api-Key'] = process.env.INTERNAL_API_KEY || '';
+    return config;
+});
 
 /* =========================
 DEPOSITO
@@ -18,14 +25,14 @@ export const deposit = async (accountNumber, amount, description = '') => {
     amount = Number(amount);
     if (isNaN(amount) || amount <= 0) throw new Error('Monto inválido');
 
-    const accountResponse = await axios.get(`${ACCOUNT_SERVICE_URL}/internal/${accountNumber}/balance`);
+    const accountResponse = await internalAxios.get(`${ACCOUNT_SERVICE_URL}/internal/${accountNumber}/balance`);
     const account = accountResponse.data;
     if (!account) throw new Error('Cuenta no encontrada');
 
     const previousBalance = account.balance;
     const newBalance = previousBalance + amount;
 
-    await axios.patch(`${ACCOUNT_SERVICE_URL}/internal/${accountNumber}/balance`, {
+    await internalAxios.patch(`${ACCOUNT_SERVICE_URL}/internal/${accountNumber}/balance`, {
         amount,
         type: TRANSACTION_TYPES.DEPOSIT
     });
@@ -59,14 +66,14 @@ export const reverseDeposit = async (transactionId, accountNumber, userRole) => 
     const diffSeconds = (new Date() - new Date(transaction.createdAt)) / 1000;
     if (diffSeconds > 60) throw new Error('Tiempo de reversión expirado');
 
-    const accountResponse = await axios.get(`${ACCOUNT_SERVICE_URL}/internal/${accountNumber}/balance`);
+    const accountResponse = await internalAxios.get(`${ACCOUNT_SERVICE_URL}/internal/${accountNumber}/balance`);
     const account = accountResponse.data;
     if (!account) throw new Error('Cuenta no encontrada');
 
     const newBalance = account.balance - transaction.amount;
     if (newBalance < 0) throw new Error('Saldo insuficiente para revertir');
 
-    await axios.patch(`${ACCOUNT_SERVICE_URL}/internal/${accountNumber}/balance`, {
+    await internalAxios.patch(`${ACCOUNT_SERVICE_URL}/internal/${accountNumber}/balance`, {
         amount: transaction.amount,
         type: TRANSACTION_TYPES.WITHDRAW
     });
@@ -90,8 +97,8 @@ export const transfer = async (fromAccountNumber, toAccountNumber, amount, descr
 
     if (amount > MAX_TRANSFER_PER_TRANSACTION) throw new Error('Excede el límite por transacción');
 
-    const fromResponse = await axios.get(`${ACCOUNT_SERVICE_URL}/internal/${fromAccountNumber}/balance`);
-    const toResponse = await axios.get(`${ACCOUNT_SERVICE_URL}/internal/${toAccountNumber}/balance`);
+    const fromResponse = await internalAxios.get(`${ACCOUNT_SERVICE_URL}/internal/${fromAccountNumber}/balance`);
+    const toResponse = await internalAxios.get(`${ACCOUNT_SERVICE_URL}/internal/${toAccountNumber}/balance`);
 
     const fromAccount = fromResponse.data;
     const toAccount = toResponse.data;
@@ -113,21 +120,21 @@ export const transfer = async (fromAccountNumber, toAccountNumber, amount, descr
     if ((totalToday + amount) > MAX_DAILY_TRANSFER) throw new Error('Excede el límite diario');
 
     // Descontar saldo de la cuenta origen
-    await axios.patch(`${ACCOUNT_SERVICE_URL}/internal/${fromAccountNumber}/balance`, {
+    await internalAxios.patch(`${ACCOUNT_SERVICE_URL}/internal/${fromAccountNumber}/balance`, {
         amount,
         type: TRANSACTION_TYPES.WITHDRAW
     });
 
     try {
         // Acreditar saldo en la cuenta destino
-        await axios.patch(`${ACCOUNT_SERVICE_URL}/internal/${toAccountNumber}/balance`, {
+        await internalAxios.patch(`${ACCOUNT_SERVICE_URL}/internal/${toAccountNumber}/balance`, {
             amount,
             type: TRANSACTION_TYPES.DEPOSIT
         });
 
     } catch (err) {
         // Si falla el depósito en destino, revertir el retiro en origen (rollback)
-        await axios.patch(`${ACCOUNT_SERVICE_URL}/internal/${fromAccountNumber}/balance`, {
+        await internalAxios.patch(`${ACCOUNT_SERVICE_URL}/internal/${fromAccountNumber}/balance`, {
             amount,
             type: TRANSACTION_TYPES.DEPOSIT
         });
@@ -169,7 +176,7 @@ export const purchaseTransaction = async (accountNumber, amount, description = '
     amount = Number(amount);
     if (isNaN(amount) || amount <= 0) throw new Error('Monto inválido');
 
-    const accountResponse = await axios.get(`${ACCOUNT_SERVICE_URL}/internal/${accountNumber}/balance`);
+    const accountResponse = await internalAxios.get(`${ACCOUNT_SERVICE_URL}/internal/${accountNumber}/balance`);
     const account = accountResponse.data;
 
     if (!account) throw new Error('Cuenta no encontrada');
@@ -178,7 +185,7 @@ export const purchaseTransaction = async (accountNumber, amount, description = '
     const previousBalance = account.balance;
     const newBalance = previousBalance - amount;
 
-    await axios.patch(`${ACCOUNT_SERVICE_URL}/internal/${accountNumber}/balance`, {
+    await internalAxios.patch(`${ACCOUNT_SERVICE_URL}/internal/${accountNumber}/balance`, {
         amount,
         type: TRANSACTION_TYPES.WITHDRAW
     });
@@ -298,8 +305,8 @@ export const getAccountsAdminOverview = async (limit = 5) => {
     const result = [];
 
     for (const acc of accounts) {
-        // Obtener saldo actual desde account-service
-        const accountResponse = await axios.get(
+        // Obtener saldo actual desde account-service (con API Key interna)
+        const accountResponse = await internalAxios.get(
             `${ACCOUNT_SERVICE_URL}/internal/${acc._id}/balance`
         );
         const accountData = accountResponse.data;

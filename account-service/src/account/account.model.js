@@ -31,9 +31,9 @@ const accountSchema = new Schema(
             required: [true, 'El saldo inicial es requerido.'],
             min: [0, 'El saldo no puede ser negativo.'],
             validate: function (value) {
-                if(this.accountType === 'AHORRO') return value >= 100
-                if(this.accountType === 'MONETARIA') return value >= 200
-                if(this.accountType === 'EMPRESARIAL') return value >= 1000
+                if(this.accountType === 'AHORRO') return value >= 0
+                if(this.accountType === 'MONETARIA') return value >= 0
+                if(this.accountType === 'EMPRESARIAL') return value >= 0
                 
                 return false
             }, message: 'El monto inicial no cumple con el mínimo requerido para este tipo de cuenta.'

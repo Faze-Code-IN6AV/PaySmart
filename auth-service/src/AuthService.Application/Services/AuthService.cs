@@ -20,6 +20,70 @@ public class AuthService(
     IConfiguration configuration,
     ILogger<AuthService> logger) : IAuthService
 {
+    // ─── Helper para construir User desde campos comunes ──────────────────────
+    private async Task<User> BuildUserAsync(
+        string name, string surname, string username, string email,
+        string password, string phone, string dpi, string address,
+        string workName, decimal monthlyIncome, bool emailVerified = false)
+    {
+        var userId            = UuidGenerator.GenerateUserId();
+        var userProfileId     = UuidGenerator.GenerateUserId();
+        var userEmailId       = UuidGenerator.GenerateUserId();
+        var userRoleId        = UuidGenerator.GenerateUserId();
+        var userPasswordReset = UuidGenerator.GenerateUserId();
+
+        var defaultRole = await roleRepository.GetByNameAsync(RoleConstants.USER_ROLE)
+            ?? throw new InvalidOperationException($"Role '{RoleConstants.USER_ROLE}' not found.");
+
+        string? verificationToken = emailVerified ? null : TokenGenerator.GenerateEmailVerificationToken();
+
+        return new User
+        {
+            Id       = userId,
+            Name     = name,
+            Surname  = surname,
+            Username = username,
+            Email    = email.ToLowerInvariant(),
+            Password = passwordHashService.HashPassword(password),
+            Status   = emailVerified, // admin-created clients start active (already verified)
+            UserProfile = new UserProfile
+            {
+                Id           = userProfileId,
+                UserId       = userId,
+                Phone        = phone,
+                DPI          = dpi,
+                Address      = address,
+                WorkName     = workName,
+                MonthlyIncome = monthlyIncome
+            },
+            UserEmail = new UserEmail
+            {
+                Id                           = userEmailId,
+                UserId                       = userId,
+                EmailVerified                = emailVerified,
+                EmailVerificationToken       = verificationToken,
+                EmailVerificationTokenExpiry = emailVerified ? null : DateTime.UtcNow.AddHours(24)
+            },
+            UserRoles =
+            [
+                new Domain.Entities.UserRole
+                {
+                    Id     = userRoleId,
+                    UserId = userId,
+                    RoleId = defaultRole.Id
+                }
+            ],
+            UserPasswordReset = new UserPasswordReset
+            {
+                Id                       = userPasswordReset,
+                UserId                   = userId,
+                PasswordResetToken       = null,
+                PasswordResetTokenExpiry = null
+            }
+        };
+    }
+
+    // ─── Registro público (self-register) ────────────────────────────────────
     public async Task<RegisterResponseDto> RegisterAsync(RegisterDto registerDto)
     {
         if (await userRepository.ExistsByEmailAsync(registerDto.Email))
@@ -34,68 +98,27 @@ public class AuthService(
             throw new BusinessException(ErrorCodes.USERNAME_ALREADY_EXISTS, "Username already exists");
         }
 
-        var emailVerificationToken = TokenGenerator.GenerateEmailVerificationToken();
+        if (await userRepository.ExistsByDpiAsync(registerDto.DPI))
+            throw new BusinessException("DPI_ALREADY_EXISTS", "Ya existe un usuario registrado con ese DPI");
 
-        var userId = UuidGenerator.GenerateUserId();
-        var userProfileId = UuidGenerator.GenerateUserId();
-        var userEmailId = UuidGenerator.GenerateUserId();
-        var userRoleId = UuidGenerator.GenerateUserId();
-        var userPasswordResetId = UuidGenerator.GenerateUserId();
+        if (registerDto.MonthlyIncome < 100)
+            throw new BusinessException("INSUFFICIENT_INCOME", "Los ingresos mensuales deben ser al menos Q100.00 para crear la cuenta");
 
-        var defaultRole = await roleRepository.GetByNameAsync(RoleConstants.USER_ROLE);
-        if (defaultRole == null)
-            throw new InvalidOperationException($"Default role '{RoleConstants.USER_ROLE}' not found. Ensure seeding runs before registration.");
-
-        var user = new User
-        {
-            Id = userId,
-            Name = registerDto.Name,
-            Surname = registerDto.Surname,
-            Username = registerDto.Username,
-            Email = registerDto.Email.ToLowerInvariant(),
-            Password = passwordHashService.HashPassword(registerDto.Password),
-            Status = false,
-            UserProfile = new UserProfile
-            {
-                Id = userProfileId,
-                UserId = userId,
-                Phone = registerDto.Phone
-            },
-            UserEmail = new UserEmail
-            {
-                Id = userEmailId,
-                UserId = userId,
-                EmailVerified = false,
-                EmailVerificationToken = emailVerificationToken,
-                EmailVerificationTokenExpiry = DateTime.UtcNow.AddHours(24)
-            },
-            UserRoles =
-            [
-                new Domain.Entities.UserRole
-                {
-                    Id = userRoleId,
-                    UserId = userId,
-                    RoleId = defaultRole.Id
-                }
-            ],
-            UserPasswordReset = new UserPasswordReset
-            {
-                Id = userPasswordResetId,
-                UserId = userId,
-                PasswordResetToken = null,
-                PasswordResetTokenExpiry = null
-            }
-        };
+        var user = await BuildUserAsync(
+            registerDto.Name, registerDto.Surname, registerDto.Username,
+            registerDto.Email, registerDto.Password, registerDto.Phone,
+            registerDto.DPI, registerDto.Address, registerDto.WorkName,
+            registerDto.MonthlyIncome, emailVerified: false);
 
         var createdUser = await userRepository.CreateUserAsync(user);
-
         logger.LogUserRegistered(createdUser.Username);
 
+        var verificationToken = createdUser.UserEmail?.EmailVerificationToken ?? string.Empty;
         _ = Task.Run(async () =>
         {
             try
             {
-                await emailService.SendEmailVerificationAsync(createdUser.Email, createdUser.Username, emailVerificationToken);
+                await emailService.SendEmailVerificationAsync(createdUser.Email, createdUser.Username, verificationToken);
                 logger.LogInformation("Verification email sent");
             }
             catch (Exception ex)
@@ -113,6 +136,78 @@ public class AuthService(
         };
     }
 
+    // ─── Crear cliente (solo ADMIN) ───────────────────────────────────────────
+    public async Task<RegisterResponseDto> AdminCreateClientAsync(AdminCreateClientDto dto)
+    {
+        if (await userRepository.ExistsByEmailAsync(dto.Email))
+            throw new BusinessException(ErrorCodes.EMAIL_ALREADY_EXISTS, "Ya existe un usuario con ese email");
+
+        if (await userRepository.ExistsByUsernameAsync(dto.Username))
+            throw new BusinessException(ErrorCodes.USERNAME_ALREADY_EXISTS, "El username ya está en uso");
+
+        if (await userRepository.ExistsByDpiAsync(dto.DPI))
+            throw new BusinessException("DPI_ALREADY_EXISTS", "Ya existe un usuario registrado con ese DPI");
+
+        if (dto.MonthlyIncome < 100)
+            throw new BusinessException("INSUFFICIENT_INCOME", "Los ingresos mensuales deben ser al menos Q100.00 para crear la cuenta");
+
+        // El admin crea la cuenta ya verificada y activa
+        var user = await BuildUserAsync(
+            dto.Name, dto.Surname, dto.Username, dto.Email,
+            dto.Password, dto.Phone, dto.DPI, dto.Address,
+            dto.WorkName, dto.MonthlyIncome, emailVerified: true);
+
+        var createdUser = await userRepository.CreateUserAsync(user);
+        logger.LogUserRegistered(createdUser.Username);
+
+        // Notificar al cliente por correo con sus credenciales
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await emailService.SendClientCreatedAsync(createdUser.Email, createdUser.Username, dto.Password);
+                logger.LogInformation("Credenciales enviadas por correo a {Email}", createdUser.Email);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "No se pudo enviar el correo de bienvenida al cliente {Email}", createdUser.Email);
+            }
+        });
+
+        return new RegisterResponseDto
+        {
+            Success = true,
+            User = MapToUserResponseDto(createdUser),
+            Message = "Cliente creado exitosamente por el administrador.",
+            EmailVerificationRequired = false
+        };
+    }
+
+    // ─── Actualizar perfil propio (cliente) ───────────────────────────────────
+    public async Task<UserResponseDto> UpdateMyProfileAsync(string userId, UpdateMyProfileDto dto)
+    {
+        var user = await userRepository.GetByIdAsync(userId);
+
+        if (dto.Name != null)    user.Name    = dto.Name;
+        if (dto.Surname != null) user.Surname = dto.Surname;
+
+        if (user.UserProfile != null)
+        {
+            if (dto.Address != null)      user.UserProfile.Address      = dto.Address;
+            if (dto.WorkName != null)     user.UserProfile.WorkName     = dto.WorkName;
+            if (dto.MonthlyIncome.HasValue)
+            {
+                if (dto.MonthlyIncome.Value < 100)
+                    throw new BusinessException("INSUFFICIENT_INCOME", "Los ingresos mensuales deben ser al menos Q100.00");
+                user.UserProfile.MonthlyIncome = dto.MonthlyIncome.Value;
+            }
+        }
+
+        var updatedUser = await userRepository.UpdateUserAsync(user);
+        return MapToUserResponseDto(updatedUser);
+    }
+
+    // ─── Login ────────────────────────────────────────────────────────────────
     public async Task<AuthResponseDto> LoginAsync(LoginDto loginDto)
     {
         User? user = null;
@@ -350,28 +445,38 @@ public class AuthService(
 
     public async Task<UserResponseDto?> GetUserByIdAsync(string userId)
     {
-        var user = await userRepository.GetByIdAsync(userId);
-        if (user == null) return null;
-
-        return MapToUserResponseDto(user);
+        try
+        {
+            var user = await userRepository.GetByIdAsync(userId);
+            return MapToUserResponseDto(user);
+        }
+        catch
+        {
+            return null;
+        }
     }
 
+    // ─── Mappers ──────────────────────────────────────────────────────────────
     private UserResponseDto MapToUserResponseDto(User user)
     {
         var userRole = user.UserRoles.FirstOrDefault()?.Role?.Name ?? RoleConstants.USER_ROLE;
         return new UserResponseDto
         {
-            Id = user.Id,
-            Name = user.Name,
-            Surname = user.Surname,
-            Username = user.Username,
-            Email = user.Email,
-            Phone = user.UserProfile?.Phone ?? string.Empty,
-            Role = userRole,
-            Status = user.Status,
+            Id             = user.Id,
+            Name           = user.Name,
+            Surname        = user.Surname,
+            Username       = user.Username,
+            Email          = user.Email,
+            Phone          = user.UserProfile?.Phone        ?? string.Empty,
+            DPI            = user.UserProfile?.DPI          ?? string.Empty,
+            Address        = user.UserProfile?.Address      ?? string.Empty,
+            WorkName       = user.UserProfile?.WorkName     ?? string.Empty,
+            MonthlyIncome  = user.UserProfile?.MonthlyIncome ?? 0,
+            Role           = userRole,
+            Status         = user.Status,
             IsEmailVerified = user.UserEmail?.EmailVerified ?? false,
-            CreatedAt = user.CreatedAt,
-            UpdatedAt = user.UpdatedAt
+            CreatedAt      = user.CreatedAt,
+            UpdatedAt      = user.UpdatedAt
         };
     }
 
@@ -379,9 +484,9 @@ public class AuthService(
     {
         return new UserDetailsDto
         {
-            Id = user.Id,
+            Id       = user.Id,
             Username = user.Username,
-            Role = user.UserRoles.FirstOrDefault()?.Role?.Name ?? RoleConstants.USER_ROLE
+            Role     = user.UserRoles.FirstOrDefault()?.Role?.Name ?? RoleConstants.USER_ROLE
         };
     }
 }
