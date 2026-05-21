@@ -7,26 +7,13 @@ import {
 } from '@heroicons/react/24/outline';
 import { StarIcon as StarSolid } from '@heroicons/react/24/solid';
 
-/**
- * QuickTransferModal
- *
- * Modal de transferencia rápida hacia una cuenta favorita.
- * La cuenta DESTINO está pre-llenada y bloqueada (viene del favorito).
- * El usuario sólo ingresa: cuenta origen, monto y descripción opcional.
- *
- * Props:
- *  - isOpen       {boolean}
- *  - favorite     {{ _id, alias, accountNumber }} | null
- *  - onClose      () => void
- *  - onSubmit     ({ fromAccountNumber, toAccountNumber, amount, description }) => Promise<{ success }>
- *  - loading      boolean
- */
 export const QuickTransferModal = ({
     isOpen,
     favorite,
     onClose,
     onSubmit,
     loading = false,
+    myAccounts = [],
 }) => {
     const {
         register,
@@ -155,25 +142,49 @@ export const QuickTransferModal = ({
                             className='block text-sm font-medium mb-1.5'
                             style={{ color: '#FFFFFF' }}
                         >
-                            Tu número de cuenta (origen)
+                            Tu cuenta de origen
                         </label>
-                        <input
-                            type='text'
-                            placeholder='Ej. ACC-000123'
-                            className='w-full px-3 py-2.5 text-sm border rounded-lg focus:outline-none'
-                            style={{
-                                backgroundColor: '#0B1830',
-                                borderColor: errors.fromAccountNumber ? '#f87171' : '#FFE968',
-                                color: '#FFFFFF',
-                            }}
-                            {...register('fromAccountNumber', {
-                                required: 'Tu número de cuenta es requerido',
-                                minLength: { value: 3, message: 'Ingresa un número válido' },
-                                validate: (val) =>
-                                    val.trim() !== favorite.accountNumber ||
-                                    'La cuenta origen no puede ser la misma que el destino',
-                            })}
-                        />
+                        {myAccounts.length > 0 ? (
+                            <select
+                                className='w-full px-3 py-2.5 text-sm border rounded-lg focus:outline-none'
+                                style={{
+                                    backgroundColor: '#0B1830',
+                                    borderColor: errors.fromAccountNumber ? '#f87171' : '#FFE968',
+                                    color: '#FFFFFF',
+                                }}
+                                {...register('fromAccountNumber', {
+                                    required: 'Selecciona una cuenta de origen',
+                                    validate: (val) =>
+                                        val.trim() !== favorite.accountNumber ||
+                                        'La cuenta origen no puede ser la misma que el destino',
+                                })}
+                            >
+                                <option value=''>— Selecciona tu cuenta —</option>
+                                {myAccounts.map((acc) => (
+                                    <option key={acc._id} value={acc.accountNumber}>
+                                        {acc.accountType} · {acc.accountNumber} · Q{Number(acc.balance).toFixed(2)}
+                                    </option>
+                                ))}
+                            </select>
+                        ) : (
+                            <input
+                                type='text'
+                                placeholder='Ej. ACC-000123'
+                                className='w-full px-3 py-2.5 text-sm border rounded-lg focus:outline-none'
+                                style={{
+                                    backgroundColor: '#0B1830',
+                                    borderColor: errors.fromAccountNumber ? '#f87171' : '#FFE968',
+                                    color: '#FFFFFF',
+                                }}
+                                {...register('fromAccountNumber', {
+                                    required: 'Tu número de cuenta es requerido',
+                                    minLength: { value: 3, message: 'Ingresa un número válido' },
+                                    validate: (val) =>
+                                        val.trim() !== favorite.accountNumber ||
+                                        'La cuenta origen no puede ser la misma que el destino',
+                                })}
+                            />
+                        )}
                         {errors.fromAccountNumber && (
                             <p className='text-red-400 text-xs mt-1'>
                                 {errors.fromAccountNumber.message}

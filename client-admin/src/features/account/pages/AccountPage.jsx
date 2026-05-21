@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
     CreditCardIcon,
     MagnifyingGlassIcon,
@@ -179,6 +179,13 @@ const CreateAccountModal = ({ client, onClose, onCreated }) => {
 
 // ——— Vista del admin ———
 const AdminView = ({ searchResults, searchLoading, foundClient, searchClient, adminCreateForUser, suspendAccount, activateAccount, deactivateAccount }) => {
+    // Si ya había un cliente buscado y volvemos a esta página, refrescar sus cuentas
+    useEffect(() => {
+        if (foundClient?.email) {
+            searchClient(foundClient.email);
+        }
+    }, []);
+
     const [query, setQuery]           = useState('');
     const [confirm, setConfirm]       = useState(null);
     const [showCreate, setShowCreate] = useState(false);

@@ -8,6 +8,7 @@ import {
 
 import { useFavoriteAccount } from '../hooks/useFavoriteAccount.js';
 import { useTransactionStore } from '../../transaction/store/transactionStore.js';
+import { useAccountStore } from '../../account/store/accountStore.js';
 import { FavoriteAccountCard } from '../components/FavoriteAccountCard.jsx';
 import { CreateFavoriteModal } from '../components/CreateFavoriteModal.jsx';
 import { EditFavoriteModal } from '../components/EditFavoriteModal.jsx';
@@ -97,6 +98,7 @@ export const FavoriteAccountPage = () => {
     // Store de transacciones para transferencias rápidas
     const transfer        = useTransactionStore((s) => s.transfer);
     const transferLoading = useTransactionStore((s) => s.loading);
+    const myAccounts      = useAccountStore((s) => s.activeAccounts);
 
     const [showCreate, setShowCreate]         = useState(false);
     const [editTarget, setEditTarget]         = useState(null);    // favorite obj
@@ -239,6 +241,7 @@ export const FavoriteAccountPage = () => {
                 onClose={() => setTransferTarget(null)}
                 onSubmit={handleQuickTransfer}
                 loading={transferLoading}
+                myAccounts={myAccounts}
             />
 
             {confirm && (

@@ -107,6 +107,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         // Configuración de UserProfile
         modelBuilder.Entity<UserProfile>(entity =>
         {
+            entity.HasQueryFilter(e => !e.User.IsDeleted);
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Id)
                 .HasMaxLength(16)
@@ -148,6 +149,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         // Configuración de UserRole
         modelBuilder.Entity<UserRole>(entity =>
         {
+            entity.HasQueryFilter(e => !e.User.IsDeleted);
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Id)
                 .HasMaxLength(16)
@@ -171,6 +173,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         // Configuración de UserEmail
         modelBuilder.Entity<UserEmail>(entity =>
         {
+            entity.HasQueryFilter(e => !e.User.IsDeleted);
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Id)
                 .HasMaxLength(16)
@@ -184,6 +187,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         // Configuración de UserPasswordReset
         modelBuilder.Entity<UserPasswordReset>(entity =>
         {
+            entity.HasQueryFilter(e => !e.User.IsDeleted);
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Id)
                 .HasMaxLength(16)

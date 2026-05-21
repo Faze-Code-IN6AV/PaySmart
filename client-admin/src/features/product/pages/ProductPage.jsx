@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
     PlusCircleIcon, CubeIcon, NoSymbolIcon, CheckCircleIcon,
     XCircleIcon, FunnelIcon, ShoppingBagIcon, MagnifyingGlassIcon,
@@ -10,6 +10,7 @@ import { CreateProductModal } from '../components/CreateProductModal.jsx';
 import { BuyProductModal } from '../components/BuyProductModal.jsx';
 import { PurchaseRow } from '../components/PurchaseRow.jsx';
 import { PurchaseDetailModal } from '../components/PurchaseDetailModal.jsx';
+import { useAccountStore } from '../../account/store/accountStore.js';
 
 const TABS = {
     PRODUCTS:  'products',
@@ -73,6 +74,14 @@ export const ProductPage = () => {
         createProduct, updateProduct, disableProduct, enableProduct,
         fetchPurchases, createPurchase,
     } = useProduct();
+
+    const myAccounts = useAccountStore((s) => s.activeAccounts);
+    const fetchAccounts = useAccountStore((s) => s.fetchAccounts);
+
+    // Cargar las cuentas propias del usuario al montar (para el dropdown de compras)
+    useEffect(() => {
+        if (!isAdmin) fetchAccounts();
+    }, [isAdmin]);
 
     const [activeTab, setActiveTab] = useState(TABS.PRODUCTS);
 
@@ -381,7 +390,7 @@ export const ProductPage = () => {
                 />
             )}
             {buyProduct && (
-                <BuyProductModal product={buyProduct} onClose={() => setBuyProduct(null)} onConfirm={handleBuy} loading={loading} />
+                <BuyProductModal product={buyProduct} onClose={() => setBuyProduct(null)} onConfirm={handleBuy} loading={loading} myAccounts={myAccounts} />
             )}
             {selectedPurchase && (
                 <PurchaseDetailModal purchase={selectedPurchase} onClose={() => setSelectedPurchase(null)} />

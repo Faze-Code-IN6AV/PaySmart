@@ -4,7 +4,6 @@ import {
     XMarkIcon,
     ArrowDownCircleIcon,
     ArrowsRightLeftIcon,
-    ShoppingBagIcon,
 } from '@heroicons/react/24/outline';
 
 const ALL_TYPES = [
@@ -22,13 +21,6 @@ const ALL_TYPES = [
         Icon: ArrowsRightLeftIcon,
         accent: '#FFE968',
         description: 'Enviar a otra cuenta',
-    },
-    {
-        value: 'PURCHASE',
-        label: 'Compra',
-        Icon: ShoppingBagIcon,
-        accent: '#fca5a5',
-        description: 'Registrar un gasto',
     },
 ];
 
