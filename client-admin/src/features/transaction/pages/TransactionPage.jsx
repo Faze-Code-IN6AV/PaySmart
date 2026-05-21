@@ -28,7 +28,7 @@ export const TransactionPage = ({ accountNumber: propAccountNumber }) => {
     } = useTransaction(activeAccount);
 
     // Cuentas del usuario (para el selector del cliente)
-    const myAccounts = useAccountStore((s) => s.accounts);
+    const myAccounts = useAccountStore((s) => s.activeAccounts);
     const fetchAccounts = useAccountStore((s) => s.fetchAccounts);
 
     useEffect(() => {

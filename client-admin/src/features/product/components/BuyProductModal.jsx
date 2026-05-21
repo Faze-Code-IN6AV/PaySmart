@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { XMarkIcon, ShoppingCartIcon } from '@heroicons/react/24/outline';
 
-export const BuyProductModal = ({ product, onClose, onConfirm, loading }) => {
+export const BuyProductModal = ({ product, onClose, onConfirm, loading, myAccounts = [] }) => {
     const [accountNumber, setAccountNumber] = useState('');
     const [quantity, setQuantity] = useState(1);
 
@@ -109,14 +109,29 @@ export const BuyProductModal = ({ product, onClose, onConfirm, loading }) => {
                 {/* Cuenta origen */}
                 <div>
                     <label className='block text-xs mb-1.5' style={{ color: 'rgba(255,255,255,0.55)' }}>
-                        Número de cuenta origen *
+                        Cuenta de origen *
                     </label>
-                    <input
-                        value={accountNumber}
-                        onChange={(e) => { setAccountNumber(e.target.value); setError(''); }}
-                        placeholder='Ej. 1234567890'
-                        style={inputStyle(!!error)}
-                    />
+                    {myAccounts.length > 0 ? (
+                        <select
+                            value={accountNumber}
+                            onChange={(e) => { setAccountNumber(e.target.value); setError(''); }}
+                            style={inputStyle(!!error)}
+                        >
+                            <option value=''>— Selecciona tu cuenta —</option>
+                            {myAccounts.map((acc) => (
+                                <option key={acc._id} value={acc.accountNumber}>
+                                    {acc.accountType} · {acc.accountNumber} · Q{Number(acc.balance).toFixed(2)}
+                                </option>
+                            ))}
+                        </select>
+                    ) : (
+                        <input
+                            value={accountNumber}
+                            onChange={(e) => { setAccountNumber(e.target.value); setError(''); }}
+                            placeholder='Ej. 1234567890'
+                            style={inputStyle(!!error)}
+                        />
+                    )}
                     {error && <p className='text-xs mt-1' style={{ color: '#fca5a5' }}>{error}</p>}
                 </div>
 
