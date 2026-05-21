@@ -29,6 +29,9 @@ export const deposit = async (accountNumber, amount, description = '') => {
     const account = accountResponse.data;
     if (!account) throw new Error('Cuenta no encontrada');
 
+    if (account.status === 'SUSPENDIDO') throw new Error('La cuenta está suspendida y no puede recibir depósitos');
+    if (account.status === 'CERRADO') throw new Error('La cuenta está cerrada y no puede recibir depósitos');
+
     const previousBalance = account.balance;
     const newBalance = previousBalance + amount;
 
@@ -180,6 +183,8 @@ export const purchaseTransaction = async (accountNumber, amount, description = '
     const account = accountResponse.data;
 
     if (!account) throw new Error('Cuenta no encontrada');
+    if (account.status === 'SUSPENDIDO') throw new Error('Tu cuenta está suspendida y no puede realizar compras');
+    if (account.status === 'CERRADO') throw new Error('Tu cuenta está cerrada y no puede realizar compras');
     if (account.balance < amount) throw new Error('Saldo insuficiente');
 
     const previousBalance = account.balance;

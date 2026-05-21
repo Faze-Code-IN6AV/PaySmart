@@ -15,7 +15,10 @@ import { getAllClients } from '../../../shared/api/admin';
 import { showError, showSuccess, showWarning } from '../../../shared/utils/toast.js';
 
 export const useAccountStore = create((set, get) => ({
+    // Todas las cuentas del usuario excepto CERRADO (para AccountPage: muestra badges ACTIVO y SUSPENDIDO)
     accounts: [],
+    // Solo cuentas ACTIVO (para dropdowns de transacciones y compras)
+    activeAccounts: [],
     loading: false,
     error: null,
     searchResults: [],
@@ -23,13 +26,14 @@ export const useAccountStore = create((set, get) => ({
     // Cliente encontrado por búsqueda (para el admin)
     foundClient: null,
 
-    // GET mis cuentas — filtra las CERRADAS para el usuario
+    // GET mis cuentas — guarda todas para la vista y filtra ACTIVO para los dropdowns
     fetchAccounts: async () => {
         try {
             set({ loading: true, error: null });
             const { data } = await getMyAccountsRequest();
-            const active = (data.data ?? []).filter((a) => a.status !== 'CERRADO');
-            set({ accounts: active, loading: false });
+            const all    = (data.data ?? []).filter((a) => a.status !== 'CERRADO'); // vista: excluye cerradas
+            const active = all.filter((a) => a.status === 'ACTIVO');               // dropdowns: solo activas
+            set({ accounts: all, activeAccounts: active, loading: false });
         } catch (err) {
             const message = err.response?.data?.message || 'Error al obtener las cuentas';
             set({ error: message, loading: false });
@@ -44,6 +48,7 @@ export const useAccountStore = create((set, get) => ({
             const { data } = await createAccountRequest({ accountType, balance });
             set((state) => ({
                 accounts: [...state.accounts, data.data],
+                activeAccounts: [...state.activeAccounts, data.data], // nueva cuenta siempre ACTIVO
                 loading: false,
             }));
             showSuccess('¡Cuenta creada exitosamente!');

@@ -136,6 +136,7 @@ export const getBalanceInternal = async (req, res) => {
         res.status(200).json({
             accountNumber: account.accountNumber,
             balance: account.balance,
+            status: account.status,
             _id: account._id
         });
     } catch (err) {
