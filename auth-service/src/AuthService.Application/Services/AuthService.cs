@@ -45,15 +45,16 @@ public class AuthService(
             Username = username,
             Email    = email.ToLowerInvariant(),
             Password = passwordHashService.HashPassword(password),
-            Status   = emailVerified, // admin-created clients start active (already verified)
+            Status   = emailVerified,
+            IsDeleted = false,
             UserProfile = new UserProfile
             {
-                Id           = userProfileId,
-                UserId       = userId,
-                Phone        = phone,
-                DPI          = dpi,
-                Address      = address,
-                WorkName     = workName,
+                Id            = userProfileId,
+                UserId        = userId,
+                Phone         = phone,
+                DPI           = dpi,
+                Address       = address,
+                WorkName      = workName,
                 MonthlyIncome = monthlyIncome
             },
             UserEmail = new UserEmail
@@ -86,6 +87,17 @@ public class AuthService(
     // ─── Registro público (self-register) ────────────────────────────────────
     public async Task<RegisterResponseDto> RegisterAsync(RegisterDto registerDto)
     {
+        // Checks de dado de baja primero para dar mensaje claro
+        if (await userRepository.ExistsByEmailDeletedAsync(registerDto.Email))
+            throw new BusinessException("EMAIL_BELONGS_TO_INACTIVE_USER", "Existe un usuario dado de baja con ese email. Contacte al administrador para reactivar la cuenta.");
+
+        if (await userRepository.ExistsByUsernameDeletedAsync(registerDto.Username))
+            throw new BusinessException("USERNAME_BELONGS_TO_INACTIVE_USER", "Existe un usuario dado de baja con ese username. Contacte al administrador para reactivar la cuenta.");
+
+        if (await userRepository.ExistsByDpiDeletedAsync(registerDto.DPI))
+            throw new BusinessException("DPI_BELONGS_TO_INACTIVE_USER", "Existe un usuario dado de baja con ese DPI. Contacte al administrador para reactivar la cuenta.");
+
+        // Checks de usuario activo duplicado
         if (await userRepository.ExistsByEmailAsync(registerDto.Email))
         {
             logger.LogRegistrationWithExistingEmail();
@@ -137,51 +149,75 @@ public class AuthService(
     }
 
     // ─── Crear cliente (solo ADMIN) ───────────────────────────────────────────
-    public async Task<RegisterResponseDto> AdminCreateClientAsync(AdminCreateClientDto dto)
+public async Task<RegisterResponseDto> AdminCreateClientAsync(AdminCreateClientDto dto)
+{
+    // Checks de dado de baja primero para dar mensaje claro
+    var emailExistsDeleted    = await userRepository.ExistsByEmailDeletedAsync(dto.Email);
+    var usernameExistsDeleted = await userRepository.ExistsByUsernameDeletedAsync(dto.Username);
+    var dpiExistsDeleted      = await userRepository.ExistsByDpiDeletedAsync(dto.DPI);
+
+    if (emailExistsDeleted)
+        throw new BusinessException("EMAIL_BELONGS_TO_INACTIVE_USER",
+            "El usuario con ese correo está dado de baja. Reactive la cuenta desde la gestión de clientes.");
+
+    if (usernameExistsDeleted)
+        throw new BusinessException("USERNAME_BELONGS_TO_INACTIVE_USER",
+            "El usuario con ese username está dado de baja. Reactive la cuenta desde la gestión de clientes.");
+
+    if (dpiExistsDeleted)
+        throw new BusinessException("DPI_BELONGS_TO_INACTIVE_USER",
+            "El usuario con ese DPI está dado de baja. Reactive la cuenta desde la gestión de clientes.");
+
+    // Checks de usuario activo duplicado
+    var emailExistsActive    = await userRepository.ExistsByEmailAsync(dto.Email);
+    var usernameExistsActive = await userRepository.ExistsByUsernameAsync(dto.Username);
+    var dpiExistsActive      = await userRepository.ExistsByDpiAsync(dto.DPI);
+
+    if (emailExistsActive)
+        throw new BusinessException(ErrorCodes.EMAIL_ALREADY_EXISTS,
+            "Ya existe un usuario con ese correo.");
+
+    if (usernameExistsActive)
+        throw new BusinessException(ErrorCodes.USERNAME_ALREADY_EXISTS,
+            "El username ya está en uso.");
+
+    if (dpiExistsActive)
+        throw new BusinessException("DPI_ALREADY_EXISTS",
+            "Ya existe un usuario registrado con ese DPI.");
+
+    if (dto.MonthlyIncome < 100)
+        throw new BusinessException("INSUFFICIENT_INCOME",
+            "Los ingresos mensuales deben ser al menos Q100.00 para crear la cuenta");
+
+    var user = await BuildUserAsync(
+        dto.Name, dto.Surname, dto.Username, dto.Email,
+        dto.Password, dto.Phone, dto.DPI, dto.Address,
+        dto.WorkName, dto.MonthlyIncome, emailVerified: true);
+
+    var createdUser = await userRepository.CreateUserAsync(user);
+    logger.LogUserRegistered(createdUser.Username);
+
+    _ = Task.Run(async () =>
     {
-        if (await userRepository.ExistsByEmailAsync(dto.Email))
-            throw new BusinessException(ErrorCodes.EMAIL_ALREADY_EXISTS, "Ya existe un usuario con ese email");
-
-        if (await userRepository.ExistsByUsernameAsync(dto.Username))
-            throw new BusinessException(ErrorCodes.USERNAME_ALREADY_EXISTS, "El username ya está en uso");
-
-        if (await userRepository.ExistsByDpiAsync(dto.DPI))
-            throw new BusinessException("DPI_ALREADY_EXISTS", "Ya existe un usuario registrado con ese DPI");
-
-        if (dto.MonthlyIncome < 100)
-            throw new BusinessException("INSUFFICIENT_INCOME", "Los ingresos mensuales deben ser al menos Q100.00 para crear la cuenta");
-
-        // El admin crea la cuenta ya verificada y activa
-        var user = await BuildUserAsync(
-            dto.Name, dto.Surname, dto.Username, dto.Email,
-            dto.Password, dto.Phone, dto.DPI, dto.Address,
-            dto.WorkName, dto.MonthlyIncome, emailVerified: true);
-
-        var createdUser = await userRepository.CreateUserAsync(user);
-        logger.LogUserRegistered(createdUser.Username);
-
-        // Notificar al cliente por correo con sus credenciales
-        _ = Task.Run(async () =>
+        try
         {
-            try
-            {
-                await emailService.SendClientCreatedAsync(createdUser.Email, createdUser.Username, dto.Password);
-                logger.LogInformation("Credenciales enviadas por correo a {Email}", createdUser.Email);
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "No se pudo enviar el correo de bienvenida al cliente {Email}", createdUser.Email);
-            }
-        });
-
-        return new RegisterResponseDto
+            await emailService.SendClientCreatedAsync(createdUser.Email, createdUser.Username, dto.Password);
+            logger.LogInformation("Credenciales enviadas por correo a {Email}", createdUser.Email);
+        }
+        catch (Exception ex)
         {
-            Success = true,
-            User = MapToUserResponseDto(createdUser),
-            Message = "Cliente creado exitosamente por el administrador.",
-            EmailVerificationRequired = false
-        };
-    }
+            logger.LogError(ex, "No se pudo enviar el correo de bienvenida al cliente {Email}", createdUser.Email);
+        }
+    });
+
+    return new RegisterResponseDto
+    {
+        Success = true,
+        User = MapToUserResponseDto(createdUser),
+        Message = "Cliente creado exitosamente por el administrador.",
+        EmailVerificationRequired = false
+    };
+}
 
     // ─── Actualizar perfil propio (cliente) ───────────────────────────────────
     public async Task<UserResponseDto> UpdateMyProfileAsync(string userId, UpdateMyProfileDto dto)
@@ -193,8 +229,8 @@ public class AuthService(
 
         if (user.UserProfile != null)
         {
-            if (dto.Address != null)      user.UserProfile.Address      = dto.Address;
-            if (dto.WorkName != null)     user.UserProfile.WorkName     = dto.WorkName;
+            if (dto.Address != null)  user.UserProfile.Address  = dto.Address;
+            if (dto.WorkName != null) user.UserProfile.WorkName = dto.WorkName;
             if (dto.MonthlyIncome.HasValue)
             {
                 if (dto.MonthlyIncome.Value < 100)
@@ -260,22 +296,10 @@ public class AuthService(
     {
         var user = await userRepository.GetByEmailVerificationTokenAsync(verifyEmailDto.Token);
         if (user == null || user.UserEmail == null)
-        {
-            return new EmailResponseDto
-            {
-                Success = false,
-                Message = "Token de verificación inválido"
-            };
-        }
+            return new EmailResponseDto { Success = false, Message = "Token de verificación inválido" };
 
         if (user.UserEmail.EmailVerificationTokenExpiry < DateTime.UtcNow)
-        {
-            return new EmailResponseDto
-            {
-                Success = false,
-                Message = "El token de verificación ha expirado, solicita uno nuevo"
-            };
-        }
+            return new EmailResponseDto { Success = false, Message = "El token de verificación ha expirado, solicita uno nuevo" };
 
         user.UserEmail.EmailVerified = true;
         user.Status = true;
@@ -284,14 +308,8 @@ public class AuthService(
 
         await userRepository.UpdateUserAsync(user);
 
-        try
-        {
-            await emailService.SendWelcomeEmailAsync(user.Email, user.Username);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Failed to send welcome email to {Email}", user.Email);
-        }
+        try { await emailService.SendWelcomeEmailAsync(user.Email, user.Username); }
+        catch (Exception ex) { logger.LogError(ex, "Failed to send welcome email to {Email}", user.Email); }
 
         logger.LogInformation("Email verified successfully for user {Username}", user.Username);
 
@@ -307,24 +325,10 @@ public class AuthService(
     {
         var user = await userRepository.GetByEmailAsync(resendDto.Email);
         if (user == null || user.UserEmail == null)
-        {
-            return new EmailResponseDto
-            {
-                Success = false,
-                Message = "Usuario no encontrado",
-                Data = new { email = resendDto.Email, sent = false }
-            };
-        }
+            return new EmailResponseDto { Success = false, Message = "Usuario no encontrado", Data = new { email = resendDto.Email, sent = false } };
 
         if (user.UserEmail.EmailVerified)
-        {
-            return new EmailResponseDto
-            {
-                Success = false,
-                Message = "El email ya ha sido verificado",
-                Data = new { email = user.Email, verified = true }
-            };
-        }
+            return new EmailResponseDto { Success = false, Message = "El email ya ha sido verificado", Data = new { email = user.Email, verified = true } };
 
         var newToken = TokenGenerator.GenerateEmailVerificationToken();
         user.UserEmail.EmailVerificationToken = newToken;
@@ -335,22 +339,12 @@ public class AuthService(
         try
         {
             await emailService.SendEmailVerificationAsync(user.Email, user.Username, newToken);
-            return new EmailResponseDto
-            {
-                Success = true,
-                Message = "Email de verificación enviado exitosamente",
-                Data = new { email = user.Email, sent = true }
-            };
+            return new EmailResponseDto { Success = true, Message = "Email de verificación enviado exitosamente", Data = new { email = user.Email, sent = true } };
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Failed to resend verification email to {Email}", user.Email);
-            return new EmailResponseDto
-            {
-                Success = false,
-                Message = "Error al enviar el email de verificación",
-                Data = new { email = user.Email, sent = false }
-            };
+            return new EmailResponseDto { Success = false, Message = "Error al enviar el email de verificación", Data = new { email = user.Email, sent = false } };
         }
     }
 
@@ -358,14 +352,7 @@ public class AuthService(
     {
         var user = await userRepository.GetByEmailAsync(forgotPasswordDto.Email);
         if (user == null)
-        {
-            return new EmailResponseDto
-            {
-                Success = true,
-                Message = "Si el email existe, se ha enviado un enlace de recuperación",
-                Data = new { email = forgotPasswordDto.Email, initiated = true }
-            };
-        }
+            return new EmailResponseDto { Success = true, Message = "Si el email existe, se ha enviado un enlace de recuperación", Data = new { email = forgotPasswordDto.Email, initiated = true } };
 
         var resetToken = TokenGenerator.GeneratePasswordResetToken();
 
@@ -391,56 +378,28 @@ public class AuthService(
             await emailService.SendPasswordResetAsync(user.Email, user.Username, resetToken);
             logger.LogInformation("Password reset email sent to {Email}", user.Email);
         }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Failed to send password reset email to {Email}", user.Email);
-        }
+        catch (Exception ex) { logger.LogError(ex, "Failed to send password reset email to {Email}", user.Email); }
 
-        return new EmailResponseDto
-        {
-            Success = true,
-            Message = "Si el email existe, se ha enviado un enlace de recuperación",
-            Data = new { email = forgotPasswordDto.Email, initiated = true }
-        };
+        return new EmailResponseDto { Success = true, Message = "Si el email existe, se ha enviado un enlace de recuperación", Data = new { email = forgotPasswordDto.Email, initiated = true } };
     }
 
     public async Task<EmailResponseDto> ResetPasswordAsync(ResetPasswordDto resetPasswordDto)
     {
         var user = await userRepository.GetByPasswordResetTokenAsync(resetPasswordDto.Token);
         if (user == null || user.UserPasswordReset == null)
-        {
-            return new EmailResponseDto
-            {
-                Success = false,
-                Message = "Token de reset inválido o expirado",
-                Data = new { token = resetPasswordDto.Token, reset = false }
-            };
-        }
+            return new EmailResponseDto { Success = false, Message = "Token de reset inválido o expirado", Data = new { token = resetPasswordDto.Token, reset = false } };
 
         if (user.UserPasswordReset.PasswordResetTokenExpiry < DateTime.UtcNow)
-        {
-            return new EmailResponseDto
-            {
-                Success = false,
-                Message = "El token de reset ha expirado, solicita uno nuevo",
-                Data = new { token = resetPasswordDto.Token, reset = false }
-            };
-        }
+            return new EmailResponseDto { Success = false, Message = "El token de reset ha expirado, solicita uno nuevo", Data = new { token = resetPasswordDto.Token, reset = false } };
 
         user.Password = passwordHashService.HashPassword(resetPasswordDto.NewPassword);
         user.UserPasswordReset.PasswordResetToken = null;
         user.UserPasswordReset.PasswordResetTokenExpiry = null;
 
         await userRepository.UpdateUserAsync(user);
-
         logger.LogInformation("Password reset successfully for user {Username}", user.Username);
 
-        return new EmailResponseDto
-        {
-            Success = true,
-            Message = "Contraseña actualizada exitosamente",
-            Data = new { email = user.Email, reset = true }
-        };
+        return new EmailResponseDto { Success = true, Message = "Contraseña actualizada exitosamente", Data = new { email = user.Email, reset = true } };
     }
 
     public async Task<UserResponseDto?> GetUserByIdAsync(string userId)
@@ -450,10 +409,7 @@ public class AuthService(
             var user = await userRepository.GetByIdAsync(userId);
             return MapToUserResponseDto(user);
         }
-        catch
-        {
-            return null;
-        }
+        catch { return null; }
     }
 
     // ─── Mappers ──────────────────────────────────────────────────────────────
@@ -462,21 +418,21 @@ public class AuthService(
         var userRole = user.UserRoles.FirstOrDefault()?.Role?.Name ?? RoleConstants.USER_ROLE;
         return new UserResponseDto
         {
-            Id             = user.Id,
-            Name           = user.Name,
-            Surname        = user.Surname,
-            Username       = user.Username,
-            Email          = user.Email,
-            Phone          = user.UserProfile?.Phone        ?? string.Empty,
-            DPI            = user.UserProfile?.DPI          ?? string.Empty,
-            Address        = user.UserProfile?.Address      ?? string.Empty,
-            WorkName       = user.UserProfile?.WorkName     ?? string.Empty,
-            MonthlyIncome  = user.UserProfile?.MonthlyIncome ?? 0,
-            Role           = userRole,
-            Status         = user.Status,
-            IsEmailVerified = user.UserEmail?.EmailVerified ?? false,
-            CreatedAt      = user.CreatedAt,
-            UpdatedAt      = user.UpdatedAt
+            Id              = user.Id,
+            Name            = user.Name,
+            Surname         = user.Surname,
+            Username        = user.Username,
+            Email           = user.Email,
+            Phone           = user.UserProfile?.Phone         ?? string.Empty,
+            DPI             = user.UserProfile?.DPI           ?? string.Empty,
+            Address         = user.UserProfile?.Address       ?? string.Empty,
+            WorkName        = user.UserProfile?.WorkName      ?? string.Empty,
+            MonthlyIncome   = user.UserProfile?.MonthlyIncome ?? 0,
+            Role            = userRole,
+            Status          = user.Status,
+            IsEmailVerified = user.UserEmail?.EmailVerified   ?? false,
+            CreatedAt       = user.CreatedAt,
+            UpdatedAt       = user.UpdatedAt
         };
     }
 

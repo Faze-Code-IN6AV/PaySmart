@@ -23,9 +23,14 @@ export const updateClient = async (userId, data) => {
   return await axiosAdmin.put(`/users/clients/${userId}`, data);
 };
 
-// DELETE /api/v1/users/clients/:userId — eliminar cliente
+// DELETE /api/v1/users/clients/:userId — dar de baja cliente
 export const deleteClient = async (userId) => {
   return await axiosAdmin.delete(`/users/clients/${userId}`);
+};
+
+// PATCH /api/v1/users/clients/:userId/reactivate — reactivar cliente dado de baja
+export const reactivateClient = async (userId) => {
+  return await axiosAdmin.patch(`/users/clients/${userId}/reactivate`);
 };
 
 // ─── Roles ────────────────────────────────────────────────────────────────────

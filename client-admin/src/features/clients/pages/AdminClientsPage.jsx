@@ -2,9 +2,9 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   UserGroupIcon, PlusIcon, PencilSquareIcon, TrashIcon,
   MagnifyingGlassIcon, EyeIcon, CheckCircleIcon,
-  ExclamationTriangleIcon, XMarkIcon,
+  ExclamationTriangleIcon, XMarkIcon, ArrowPathIcon,
 } from '@heroicons/react/24/outline';
-import { getAllClients, deleteClient } from '../../../shared/api/admin';
+import { getAllClients, deleteClient, reactivateClient } from '../../../shared/api/admin';
 import { CreateClientModal } from '../components/CreateClientModal.jsx';
 import { EditClientModal }   from '../components/EditClientModal.jsx';
 
@@ -57,7 +57,7 @@ const ViewClientModal = ({ client, onClose }) => (
           ['Dirección',       client.address],
           ['Nombre de trabajo', client.workName],
           ['Ingresos mensuales', fmt(client.monthlyIncome)],
-          ['Estado',          client.status ? 'Activo' : 'Inactivo'],
+          ['Estado',          client.isDeleted ? 'Dado de baja' : client.status ? 'Activo' : 'Inactivo'],
           ['Email verificado', client.isEmailVerified ? 'Sí' : 'No'],
           ['Creado',          new Date(client.createdAt).toLocaleDateString('es-GT')],
         ].map(([label, value]) => (
@@ -82,7 +82,7 @@ const ViewClientModal = ({ client, onClose }) => (
   </div>
 );
 
-// ─── Confirm eliminar ─────────────────────────────────────────────────────────
+// ─── Confirm dar de baja ──────────────────────────────────────────────────────
 const DeleteConfirm = ({ client, onConfirm, onCancel, loading }) => (
   <div
     className="fixed inset-0 z-50 flex items-center justify-center p-4"
@@ -125,15 +125,58 @@ const DeleteConfirm = ({ client, onConfirm, onCancel, loading }) => (
   </div>
 );
 
+// ─── Confirm reactivar ────────────────────────────────────────────────────────
+const ReactivateConfirm = ({ client, onConfirm, onCancel, loading }) => (
+  <div
+    className="fixed inset-0 z-50 flex items-center justify-center p-4"
+    style={{ backgroundColor: 'rgba(11,24,48,0.9)', backdropFilter: 'blur(4px)' }}
+  >
+    <div
+      className="w-full max-w-sm rounded-2xl p-6 space-y-4"
+      style={{ backgroundColor: '#162C5F', border: '1px solid rgba(65,210,242,0.4)' }}
+    >
+      <div className="flex items-center gap-3">
+        <div className="p-2.5 rounded-xl" style={{ backgroundColor: 'rgba(65,210,242,0.12)' }}>
+          <ArrowPathIcon className="w-6 h-6" style={{ color: '#41D2F2' }} />
+        </div>
+        <div>
+          <h3 className="font-bold" style={{ color: '#41D2F2' }}>Reactivar cliente</h3>
+          <p className="text-xs" style={{ color: 'rgba(255,255,255,0.45)' }}>{client.username}</p>
+        </div>
+      </div>
+      <p className="text-sm" style={{ color: 'rgba(255,255,255,0.65)' }}>
+        El cliente volverá a estar <span className="font-semibold" style={{ color: '#41D2F2' }}>activo</span> y podrá iniciar sesión nuevamente.
+      </p>
+      <div className="flex gap-3">
+        <button
+          onClick={onCancel}
+          className="flex-1 py-2.5 rounded-lg text-sm font-medium"
+          style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.6)', border: '1px solid rgba(255,255,255,0.1)' }}
+        >
+          Cancelar
+        </button>
+        <button
+          onClick={onConfirm}
+          disabled={loading}
+          className="flex-1 py-2.5 rounded-lg text-sm font-bold disabled:opacity-60"
+          style={{ backgroundColor: '#41D2F2', color: '#0B1830' }}
+        >
+          {loading ? 'Procesando...' : 'Reactivar'}
+        </button>
+      </div>
+    </div>
+  </div>
+);
+
 // ─── Página principal ─────────────────────────────────────────────────────────
 export const AdminClientsPage = () => {
-  const [clients,       setClients]       = useState([]);
-  const [filtered,      setFiltered]      = useState([]);
-  const [search,        setSearch]        = useState('');
-  const [loading,       setLoading]       = useState(true);
-  const [modal,         setModal]         = useState(null);
-  const [deleteLoading, setDeleteLoading] = useState(false);
-  const [toast,         setToast]         = useState(null);
+  const [clients,           setClients]           = useState([]);
+  const [filtered,          setFiltered]          = useState([]);
+  const [search,            setSearch]            = useState('');
+  const [loading,           setLoading]           = useState(true);
+  const [modal,             setModal]             = useState(null);
+  const [actionLoading,     setActionLoading]     = useState(false);
+  const [toast,             setToast]             = useState(null);
 
   const showToast = useCallback((msg, type = 'ok') => setToast({ msg, type }), []);
 
@@ -142,6 +185,7 @@ export const AdminClientsPage = () => {
     try {
       const res  = await getAllClients();
       const data = res.data?.data ?? res.data ?? [];
+      console.log('todos los clientes:', JSON.stringify(data, null, 2));
       setClients(data);
       setFiltered(data);
     } catch {
@@ -166,16 +210,31 @@ export const AdminClientsPage = () => {
 
   const handleDeleteConfirm = async () => {
     if (!modal?.client) return;
-    setDeleteLoading(true);
+    setActionLoading(true);
     try {
       await deleteClient(modal.client.id);
       showToast('Cliente dado de baja exitosamente');
       setModal(null);
       load();
     } catch (err) {
-      showToast(err?.response?.data?.message || 'Error al eliminar', 'err');
+      showToast(err?.response?.data?.message || 'Error al dar de baja', 'err');
     } finally {
-      setDeleteLoading(false);
+      setActionLoading(false);
+    }
+  };
+
+  const handleReactivateConfirm = async () => {
+    if (!modal?.client) return;
+    setActionLoading(true);
+    try {
+      await reactivateClient(modal.client.id);
+      showToast('Cliente reactivado exitosamente');
+      setModal(null);
+      load();
+    } catch (err) {
+      showToast(err?.response?.data?.message || 'Error al reactivar', 'err');
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -257,81 +316,102 @@ export const AdminClientsPage = () => {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((c, i) => (
-                <tr
-                  key={c.id}
-                  style={{
-                    backgroundColor: i % 2 === 0 ? '#162C5F' : 'rgba(22,44,95,0.5)',
-                    borderTop: '1px solid rgba(65,210,242,0.06)',
-                  }}
-                >
-                  <td className="px-4 py-3">
-                    <div className="font-semibold" style={{ color: '#FFFFFF' }}>
-                      {c.name} {c.surname}
-                    </div>
-                    <div className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>
-                      {c.phone || '—'}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 font-mono text-xs" style={{ color: '#41D2F2' }}>
-                    {c.username}
-                  </td>
-                  <td className="px-4 py-3 text-xs" style={{ color: 'rgba(255,255,255,0.7)' }}>
-                    {c.email}
-                  </td>
-                  <td className="px-4 py-3 font-mono text-xs" style={{ color: '#FFE968' }}>
-                    {c.dpi || '—'}
-                  </td>
-                  <td className="px-4 py-3 text-xs font-semibold" style={{ color: '#FFE968' }}>
-                    {fmt(c.monthlyIncome)}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className="px-2 py-1 rounded-full text-xs font-semibold"
-                      style={{
-                        backgroundColor: c.status ? 'rgba(65,210,242,0.12)' : 'rgba(239,68,68,0.12)',
-                        color: c.status ? '#41D2F2' : '#fca5a5',
-                      }}
-                    >
-                      {c.status ? 'Activo' : 'Inactivo'}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-1">
-                      <button
-                        title="Ver detalle"
-                        onClick={() => setModal({ type: 'view', client: c })}
-                        className="p-1.5 rounded-lg hover:opacity-70"
-                        style={{ color: '#41D2F2', backgroundColor: 'rgba(65,210,242,0.08)' }}
+              {filtered.map((c, i) => {
+                const isInactive = c.isDeleted || !c.status;
+                return (
+                  <tr
+                    key={c.id}
+                    style={{
+                      backgroundColor: i % 2 === 0 ? '#162C5F' : 'rgba(22,44,95,0.5)',
+                      borderTop: '1px solid rgba(65,210,242,0.06)',
+                      opacity: isInactive ? 0.4 : 1,
+                    }}
+                  >
+                    <td className="px-4 py-3">
+                      <div className="font-semibold" style={{ color: '#FFFFFF' }}>
+                        {c.name} {c.surname}
+                      </div>
+                      <div className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                        {c.phone || '—'}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 font-mono text-xs" style={{ color: '#41D2F2' }}>
+                      {c.username}
+                    </td>
+                    <td className="px-4 py-3 text-xs" style={{ color: 'rgba(255,255,255,0.7)' }}>
+                      {c.email}
+                    </td>
+                    <td className="px-4 py-3 font-mono text-xs" style={{ color: '#FFE968' }}>
+                      {c.dpi || '—'}
+                    </td>
+                    <td className="px-4 py-3 text-xs font-semibold" style={{ color: '#FFE968' }}>
+                      {fmt(c.monthlyIncome)}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span
+                        className="px-2 py-1 rounded-full text-xs font-semibold"
+                        style={{
+                          backgroundColor: isInactive ? 'rgba(239,68,68,0.12)' : 'rgba(65,210,242,0.12)',
+                          color: isInactive ? '#fca5a5' : '#41D2F2',
+                        }}
                       >
-                        <EyeIcon className="w-4 h-4" />
-                      </button>
-                      <button
-                        title="Editar"
-                        onClick={() => setModal({ type: 'edit', client: c })}
-                        className="p-1.5 rounded-lg hover:opacity-70"
-                        style={{ color: '#FFE968', backgroundColor: 'rgba(255,233,104,0.08)' }}
-                      >
-                        <PencilSquareIcon className="w-4 h-4" />
-                      </button>
-                      <button
-                        title="Dar de baja"
-                        onClick={() => setModal({ type: 'delete', client: c })}
-                        className="p-1.5 rounded-lg hover:opacity-70"
-                        style={{ color: '#fca5a5', backgroundColor: 'rgba(239,68,68,0.08)' }}
-                      >
-                        <TrashIcon className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                        {isInactive ? 'Dado de baja' : 'Activo'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-1">
+                        {/* Ver detalle — siempre visible */}
+                        <button
+                          title="Ver detalle"
+                          onClick={() => setModal({ type: 'view', client: c })}
+                          className="p-1.5 rounded-lg hover:opacity-70"
+                          style={{ color: '#41D2F2', backgroundColor: 'rgba(65,210,242,0.08)' }}
+                        >
+                          <EyeIcon className="w-4 h-4" />
+                        </button>
+
+                        {isInactive ? (
+                          /* Cliente dado de baja: solo botón reactivar */
+                          <button
+                            title="Reactivar cliente"
+                            onClick={() => setModal({ type: 'reactivate', client: c })}
+                            className="p-1.5 rounded-lg hover:opacity-70"
+                            style={{ color: '#41D2F2', backgroundColor: 'rgba(65,210,242,0.08)' }}
+                          >
+                            <ArrowPathIcon className="w-4 h-4" />
+                          </button>
+                        ) : (
+                          /* Cliente activo: editar y dar de baja */
+                          <>
+                            <button
+                              title="Editar"
+                              onClick={() => setModal({ type: 'edit', client: c })}
+                              className="p-1.5 rounded-lg hover:opacity-70"
+                              style={{ color: '#FFE968', backgroundColor: 'rgba(255,233,104,0.08)' }}
+                            >
+                              <PencilSquareIcon className="w-4 h-4" />
+                            </button>
+                            <button
+                              title="Dar de baja"
+                              onClick={() => setModal({ type: 'delete', client: c })}
+                              className="p-1.5 rounded-lg hover:opacity-70"
+                              style={{ color: '#fca5a5', backgroundColor: 'rgba(239,68,68,0.08)' }}
+                            >
+                              <TrashIcon className="w-4 h-4" />
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
       )}
 
-      {/* Modals — definidos FUERA del render tree para evitar re-mount */}
+      {/* Modales */}
       {modal === 'create' && (
         <CreateClientModal
           onClose={() => setModal(null)}
@@ -351,8 +431,16 @@ export const AdminClientsPage = () => {
       {modal?.type === 'delete' && (
         <DeleteConfirm
           client={modal.client}
-          loading={deleteLoading}
+          loading={actionLoading}
           onConfirm={handleDeleteConfirm}
+          onCancel={() => setModal(null)}
+        />
+      )}
+      {modal?.type === 'reactivate' && (
+        <ReactivateConfirm
+          client={modal.client}
+          loading={actionLoading}
+          onConfirm={handleReactivateConfirm}
           onCancel={() => setModal(null)}
         />
       )}

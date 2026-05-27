@@ -11,8 +11,8 @@ export const EditClientModal = ({ client, onClose, onUpdated }) => {
     workName:      client.workName || '',
     monthlyIncome: client.monthlyIncome || '',
   });
-  const [errors, setErrors]     = useState({});
-  const [loading, setLoading]   = useState(false);
+  const [errors, setErrors]           = useState({});
+  const [loading, setLoading]         = useState(false);
   const [serverError, setServerError] = useState('');
 
   const set = useCallback((field) => (e) =>
@@ -20,10 +20,29 @@ export const EditClientModal = ({ client, onClose, onUpdated }) => {
 
   const validate = () => {
     const e = {};
-    if (form.phone && !form.phone.match(/^\d{8}$/))
+
+    if (!form.name.trim())
+      e.name = 'El nombre no puede estar vacío';
+
+    if (!form.surname.trim())
+      e.surname = 'El apellido no puede estar vacío';
+
+    if (!form.phone.trim())
+      e.phone = 'El teléfono no puede estar vacío';
+    else if (!form.phone.match(/^\d{8}$/))
       e.phone = 'Debe tener exactamente 8 dígitos';
-    if (form.monthlyIncome && Number(form.monthlyIncome) < 100)
+
+    if (!form.workName.trim())
+      e.workName = 'El nombre de trabajo no puede estar vacío';
+
+    if (!form.address.trim())
+      e.address = 'La dirección no puede estar vacía';
+
+    if (!form.monthlyIncome)
+      e.monthlyIncome = 'Los ingresos mensuales no pueden estar vacíos';
+    else if (Number(form.monthlyIncome) < 100)
       e.monthlyIncome = 'Mínimo Q100.00';
+
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -97,10 +116,10 @@ export const EditClientModal = ({ client, onClose, onUpdated }) => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {[
-              { label: 'Nombre',           field: 'name' },
-              { label: 'Apellido',         field: 'surname' },
-              { label: 'Teléfono (8 díg.)',field: 'phone' },
-              { label: 'Nombre de trabajo',field: 'workName' },
+              { label: 'Nombre *',          field: 'name' },
+              { label: 'Apellido *',        field: 'surname' },
+              { label: 'Teléfono (8 díg.)', field: 'phone' },
+              { label: 'Nombre de trabajo', field: 'workName' },
             ].map(({ label, field }) => (
               <div key={field}>
                 <label className="block text-xs font-medium mb-1" style={{ color: 'rgba(255,255,255,0.7)' }}>
@@ -125,8 +144,9 @@ export const EditClientModal = ({ client, onClose, onUpdated }) => {
               value={form.address}
               onChange={set('address')}
               className="w-full px-3 py-2 text-sm rounded-lg border focus:outline-none"
-              style={{ backgroundColor: '#0B1830', borderColor: '#41D2F2', color: '#FFFFFF' }}
+              style={{ backgroundColor: '#0B1830', borderColor: errors.address ? '#ef4444' : '#41D2F2', color: '#FFFFFF' }}
             />
+            {errors.address && <p className="text-red-400 text-xs mt-1">{errors.address}</p>}
           </div>
 
           <div>

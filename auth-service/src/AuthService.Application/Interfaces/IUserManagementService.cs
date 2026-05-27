@@ -11,4 +11,5 @@ public interface IUserManagementService
     Task<UserResponseDto> GetClientByIdAsync(string userId);
     Task<UserResponseDto> UpdateClientProfileAsync(string userId, UpdateClientProfileDto dto);
     Task<bool> DeleteClientAsync(string adminUserId, string targetUserId);
+    Task<bool> ReactivateClientAsync(string adminUserId, string targetUserId);
 }

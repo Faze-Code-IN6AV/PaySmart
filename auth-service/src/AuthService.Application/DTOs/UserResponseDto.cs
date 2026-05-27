@@ -14,6 +14,7 @@ public class UserResponseDto
     public decimal MonthlyIncome { get; set; }
     public string Role { get; set; } = string.Empty;
     public bool Status { get; set; }
+    public bool IsDeleted { get; set; }
     public bool IsEmailVerified { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }

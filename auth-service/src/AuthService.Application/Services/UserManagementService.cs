@@ -96,6 +96,12 @@ public class UserManagementService(IUserRepository users, IRoleRepository roles)
         if (isAdmin)
             throw new InvalidOperationException("El administrador no puede modificar los datos de otro administrador");
 
+        // Campos requeridos: no pueden enviarse vacíos
+        if (dto.Name != null && string.IsNullOrWhiteSpace(dto.Name))
+            throw new InvalidOperationException("El nombre no puede estar vacío");
+        if (dto.Surname != null && string.IsNullOrWhiteSpace(dto.Surname))
+            throw new InvalidOperationException("El apellido no puede estar vacío");
+
         // Campos editables del User
         if (dto.Name    != null) user.Name    = dto.Name;
         if (dto.Surname != null) user.Surname = dto.Surname;
@@ -132,5 +138,22 @@ public class UserManagementService(IUserRepository users, IRoleRepository roles)
 
         return await users.DeleteUserAsync(targetUserId);
     }
-}
 
+    // ─── Admin reactiva cliente dado de baja ─────────────────────────────────
+    public async Task<bool> ReactivateClientAsync(string adminUserId, string targetUserId)
+    {
+        if (adminUserId == targetUserId)
+            throw new InvalidOperationException("No puedes reactivar tu propia cuenta desde este endpoint");
+
+        var target = await users.GetByIdAsync(targetUserId);
+
+        var isAdmin = target.UserRoles.Any(r => r.Role.Name == RoleConstants.ADMIN_ROLE);
+        if (isAdmin)
+            throw new InvalidOperationException("No se puede reactivar a otro administrador desde este endpoint");
+
+        if (!target.IsDeleted)
+            throw new InvalidOperationException("El cliente ya está activo");
+
+        return await users.ReactivateUserAsync(targetUserId);
+    }
+}

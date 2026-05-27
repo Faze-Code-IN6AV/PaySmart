@@ -92,7 +92,7 @@ public class UsersController(IUserManagementService userManagementService) : Con
 
     // ─── Eliminar cliente ──────────────────────────────────────────────────────
     /// <summary>
-    /// [ADMIN] Eliminar un cliente. No puede eliminar a otro administrador.
+    /// [ADMIN] Dar de baja a un cliente. No puede eliminar a otro administrador.
     /// </summary>
     [HttpDelete("clients/{userId}")]
     [Authorize]
@@ -107,7 +107,28 @@ public class UsersController(IUserManagementService userManagementService) : Con
 
         var adminId = GetCurrentUserId() ?? string.Empty;
         await userManagementService.DeleteClientAsync(adminId, userId);
-        return Ok(new { success = true, message = "Cliente eliminado exitosamente" });
+        return Ok(new { success = true, message = "Cliente dado de baja exitosamente" });
+    }
+
+    // ─── Reactivar cliente ────────────────────────────────────────────────────
+    /// <summary>
+    /// [ADMIN] Reactivar un cliente dado de baja.
+    /// </summary>
+    [HttpPatch("clients/{userId}/reactivate")]
+    [Authorize]
+    [EnableRateLimiting("ApiPolicy")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult> ReactivateClient(string userId)
+    {
+        if (!await CurrentUserIsAdmin())
+            return StatusCode(403, new { success = false, message = "Forbidden" });
+
+        var adminId = GetCurrentUserId() ?? string.Empty;
+        await userManagementService.ReactivateClientAsync(adminId, userId);
+        return Ok(new { success = true, message = "Cliente reactivado exitosamente" });
     }
 
     // ─── Cambiar rol de usuario ────────────────────────────────────────────────
