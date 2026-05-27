@@ -1,0 +1,687 @@
+{
+  "info": {
+    "name": "PaySmart API",
+    "description": "Colección completa de endpoints para el sistema de pagos PaySmart. Incluye AuthService, AccountService, TransactionService, ProductService, FavoriteAccountService y ReportService.\n\n**Instrucciones:**\n1. Importa este archivo en Postman.\n2. Configura la variable `token` pegando el JWT que devuelve el endpoint de Login.\n3. Ejecuta los requests en el orden sugerido dentro de cada carpeta.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "auth_url",        "value": "http://localhost:3000/api/v1",         "type": "string" },
+    { "key": "account_url",     "value": "http://localhost:3001/paySmart/v1",    "type": "string" },
+    { "key": "transaction_url", "value": "http://localhost:3002/paySmart/v1",    "type": "string" },
+    { "key": "product_url",     "value": "http://localhost:3003/paySmart/v1",    "type": "string" },
+    { "key": "favorite_url",    "value": "http://localhost:3004/paySmart/v1",    "type": "string" },
+    { "key": "report_url",      "value": "http://localhost:3005/paySmart/v1",    "type": "string" },
+    { "key": "token",           "value": "PEGA_TU_JWT_AQUI",                     "type": "string" },
+    { "key": "account_number",  "value": "123456789012345678",                   "type": "string" },
+    { "key": "user_id",         "value": "",                                     "type": "string" },
+    { "key": "product_id",      "value": "",                                     "type": "string" },
+    { "key": "transaction_id",  "value": "",                                     "type": "string" },
+    { "key": "favorite_id",     "value": "",                                     "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "AuthService",
+      "description": "Autenticación, registro y gestión de usuarios. Base URL: http://localhost:3000/api/v1",
+      "item": [
+        {
+          "name": "Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{auth_url}}/health", "host": ["{{auth_url}}"], "path": ["health"] }
+          }
+        },
+        {
+          "name": "Registro de usuario",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Juan\",\n  \"surname\": \"Pérez\",\n  \"username\": \"juanperez\",\n  \"email\": \"juan@ejemplo.com\",\n  \"password\": \"Password123!\",\n  \"phone\": \"55551234\",\n  \"dpi\": \"1234567890123\",\n  \"address\": \"Zona 1, Ciudad de Guatemala\",\n  \"workName\": \"Empresa S.A.\",\n  \"monthlyIncome\": 5000\n}"
+            },
+            "url": { "raw": "{{auth_url}}/auth/register", "host": ["{{auth_url}}"], "path": ["auth", "register"] }
+          }
+        },
+        {
+          "name": "Verificar email",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"TOKEN_DEL_EMAIL\"\n}"
+            },
+            "url": { "raw": "{{auth_url}}/auth/verify-email", "host": ["{{auth_url}}"], "path": ["auth", "verify-email"] }
+          }
+        },
+        {
+          "name": "Reenviar verificación",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"juan@ejemplo.com\"\n}"
+            },
+            "url": { "raw": "{{auth_url}}/auth/resend-verification", "host": ["{{auth_url}}"], "path": ["auth", "resend-verification"] }
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.token) {",
+                  "  pm.collectionVariables.set('token', res.token);",
+                  "  console.log('Token guardado automáticamente.');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"emailOrUsername\": \"juanperez\",\n  \"password\": \"Password123!\"\n}"
+            },
+            "url": { "raw": "{{auth_url}}/auth/login", "host": ["{{auth_url}}"], "path": ["auth", "login"] }
+          }
+        },
+        {
+          "name": "Recuperar contraseña",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"juan@ejemplo.com\"\n}"
+            },
+            "url": { "raw": "{{auth_url}}/auth/forgot-password", "host": ["{{auth_url}}"], "path": ["auth", "forgot-password"] }
+          }
+        },
+        {
+          "name": "Resetear contraseña",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"TOKEN_DEL_EMAIL\",\n  \"newPassword\": \"NuevaPassword123!\"\n}"
+            },
+            "url": { "raw": "{{auth_url}}/auth/reset-password", "host": ["{{auth_url}}"], "path": ["auth", "reset-password"] }
+          }
+        },
+        {
+          "name": "Ver mi perfil",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{auth_url}}/auth/profile", "host": ["{{auth_url}}"], "path": ["auth", "profile"] }
+          }
+        },
+        {
+          "name": "Editar mi perfil",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Juan Actualizado\",\n  \"surname\": \"Pérez\",\n  \"address\": \"Zona 10, Ciudad de Guatemala\",\n  \"workName\": \"Nueva Empresa S.A.\",\n  \"monthlyIncome\": 7500\n}"
+            },
+            "url": { "raw": "{{auth_url}}/auth/profile", "host": ["{{auth_url}}"], "path": ["auth", "profile"] }
+          }
+        },
+        {
+          "name": "Ver perfil por ID",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{user_id}}\"\n}"
+            },
+            "url": { "raw": "{{auth_url}}/auth/profile/by-id", "host": ["{{auth_url}}"], "path": ["auth", "profile", "by-id"] }
+          }
+        },
+        {
+          "name": "Admin — Crear cliente",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"María\",\n  \"surname\": \"García\",\n  \"username\": \"mariagarcia\",\n  \"email\": \"maria@ejemplo.com\",\n  \"password\": \"Password123!\",\n  \"phone\": \"44443333\",\n  \"dpi\": \"9876543210123\",\n  \"address\": \"Zona 5, Ciudad de Guatemala\",\n  \"workName\": \"Clínica Médica\",\n  \"monthlyIncome\": 12000\n}"
+            },
+            "url": { "raw": "{{auth_url}}/auth/admin/create-client", "host": ["{{auth_url}}"], "path": ["auth", "admin", "create-client"] }
+          }
+        },
+        {
+          "name": "Admin — Listar clientes",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{auth_url}}/users/clients", "host": ["{{auth_url}}"], "path": ["users", "clients"] }
+          }
+        },
+        {
+          "name": "Admin — Ver cliente por ID",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{auth_url}}/users/clients/{{user_id}}", "host": ["{{auth_url}}"], "path": ["users", "clients", "{{user_id}}"] }
+          }
+        },
+        {
+          "name": "Admin — Editar cliente",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"María Editada\",\n  \"address\": \"Zona 15, Ciudad de Guatemala\",\n  \"workName\": \"Farmacia Central\",\n  \"monthlyIncome\": 15000\n}"
+            },
+            "url": { "raw": "{{auth_url}}/users/clients/{{user_id}}", "host": ["{{auth_url}}"], "path": ["users", "clients", "{{user_id}}"] }
+          }
+        },
+        {
+          "name": "Admin — Eliminar cliente",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{auth_url}}/users/clients/{{user_id}}", "host": ["{{auth_url}}"], "path": ["users", "clients", "{{user_id}}"] }
+          }
+        },
+        {
+          "name": "Admin — Actualizar rol de usuario",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"roleName\": \"ADMIN_ROLE\"\n}"
+            },
+            "url": { "raw": "{{auth_url}}/users/{{user_id}}/role", "host": ["{{auth_url}}"], "path": ["users", "{{user_id}}", "role"] }
+          }
+        },
+        {
+          "name": "Admin — Ver roles de usuario",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{auth_url}}/users/{{user_id}}/roles", "host": ["{{auth_url}}"], "path": ["users", "{{user_id}}", "roles"] }
+          }
+        },
+        {
+          "name": "Admin — Usuarios por rol",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{auth_url}}/users/by-role/USER_ROLE", "host": ["{{auth_url}}"], "path": ["users", "by-role", "USER_ROLE"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "AccountService",
+      "description": "Gestión de cuentas bancarias. Base URL: http://localhost:3001/paySmart/v1",
+      "item": [
+        {
+          "name": "Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{account_url}}/health", "host": ["{{account_url}}"], "path": ["health"] }
+          }
+        },
+        {
+          "name": "Crear cuenta bancaria",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"accountType\": \"AHORRO\",\n  \"balance\": 500,\n  \"currency\": \"GTQ\"\n}"
+            },
+            "url": { "raw": "{{account_url}}/account", "host": ["{{account_url}}"], "path": ["account"] }
+          }
+        },
+        {
+          "name": "Obtener mis cuentas",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{account_url}}/account", "host": ["{{account_url}}"], "path": ["account"] }
+          }
+        },
+        {
+          "name": "Consultar saldo",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{account_url}}/account/{{account_number}}/balance", "host": ["{{account_url}}"], "path": ["account", "{{account_number}}", "balance"] }
+          }
+        },
+        {
+          "name": "Admin — Buscar cuentas por email",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{account_url}}/account/admin/user/juan@ejemplo.com", "host": ["{{account_url}}"], "path": ["account", "admin", "user", "juan@ejemplo.com"] }
+          }
+        },
+        {
+          "name": "Admin — Crear cuenta para usuario",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{user_id}}\",\n  \"accountType\": \"MONETARIA\",\n  \"balance\": 1000,\n  \"currency\": \"GTQ\"\n}"
+            },
+            "url": { "raw": "{{account_url}}/account/admin/create-for-user", "host": ["{{account_url}}"], "path": ["account", "admin", "create-for-user"] }
+          }
+        },
+        {
+          "name": "Admin — Desactivar cuenta",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{account_url}}/account/admin/{{account_number}}/deactivate", "host": ["{{account_url}}"], "path": ["account", "admin", "{{account_number}}", "deactivate"] }
+          }
+        },
+        {
+          "name": "Admin — Activar cuenta",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{account_url}}/account/admin/{{account_number}}/activate", "host": ["{{account_url}}"], "path": ["account", "admin", "{{account_number}}", "activate"] }
+          }
+        },
+        {
+          "name": "Admin — Suspender cuenta",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{account_url}}/account/admin/{{account_number}}/suspend", "host": ["{{account_url}}"], "path": ["account", "admin", "{{account_number}}", "suspend"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "TransactionService",
+      "description": "Depósitos, transferencias y compras. Base URL: http://localhost:3002/paySmart/v1",
+      "item": [
+        {
+          "name": "Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{transaction_url}}/health", "host": ["{{transaction_url}}"], "path": ["health"] }
+          }
+        },
+        {
+          "name": "Realizar depósito",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"accountNumber\": \"{{account_number}}\",\n  \"amount\": 500,\n  \"description\": \"Depósito inicial\"\n}"
+            },
+            "url": { "raw": "{{transaction_url}}/transaction/deposit", "host": ["{{transaction_url}}"], "path": ["transaction", "deposit"] }
+          }
+        },
+        {
+          "name": "Realizar transferencia",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fromAccountNumber\": \"{{account_number}}\",\n  \"toAccountNumber\": \"NUMERO_CUENTA_DESTINO\",\n  \"amount\": 200,\n  \"description\": \"Pago de servicio\"\n}"
+            },
+            "url": { "raw": "{{transaction_url}}/transaction/transfer", "host": ["{{transaction_url}}"], "path": ["transaction", "transfer"] }
+          }
+        },
+        {
+          "name": "Realizar compra",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"{{product_id}}\",\n  \"fromAccountNumber\": \"{{account_number}}\",\n  \"amount\": 99.99,\n  \"description\": \"Compra de producto\"\n}"
+            },
+            "url": { "raw": "{{transaction_url}}/transaction/purchase", "host": ["{{transaction_url}}"], "path": ["transaction", "purchase"] }
+          }
+        },
+        {
+          "name": "Revertir depósito",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{transaction_url}}/transaction/reverse/{{transaction_id}}", "host": ["{{transaction_url}}"], "path": ["transaction", "reverse", "{{transaction_id}}"] }
+          }
+        },
+        {
+          "name": "Historial de movimientos",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{transaction_url}}/transaction/{{account_number}}", "host": ["{{transaction_url}}"], "path": ["transaction", "{{account_number}}"] }
+          }
+        },
+        {
+          "name": "Últimos 5 movimientos",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{transaction_url}}/transaction/{{account_number}}/last", "host": ["{{transaction_url}}"], "path": ["transaction", "{{account_number}}", "last"] }
+          }
+        },
+        {
+          "name": "Admin — Cuentas con más movimientos",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{transaction_url}}/transaction/internal/stats/accounts-most-movements", "host": ["{{transaction_url}}"], "path": ["transaction", "internal", "stats", "accounts-most-movements"] }
+          }
+        },
+        {
+          "name": "Admin — Resumen de cuentas",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{transaction_url}}/transaction/internal/admin/accounts-overview", "host": ["{{transaction_url}}"], "path": ["transaction", "internal", "admin", "accounts-overview"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ProductService",
+      "description": "Gestión de productos y compras. Base URL: http://localhost:3003/paySmart/v1",
+      "item": [
+        {
+          "name": "Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{product_url}}/health", "host": ["{{product_url}}"], "path": ["health"] }
+          }
+        },
+        {
+          "name": "Admin — Crear producto",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Plan Internet 100MB\",\n  \"description\": \"Acceso a internet de alta velocidad\",\n  \"price\": 299.99,\n  \"type\": \"SERVICE\",\n  \"stock\": null\n}"
+            },
+            "url": { "raw": "{{product_url}}/products", "host": ["{{product_url}}"], "path": ["products"] }
+          }
+        },
+        {
+          "name": "Admin — Listar todos los productos",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{product_url}}/products", "host": ["{{product_url}}"], "path": ["products"] }
+          }
+        },
+        {
+          "name": "Productos disponibles",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{product_url}}/products/available/list", "host": ["{{product_url}}"], "path": ["products", "available", "list"] }
+          }
+        },
+        {
+          "name": "Admin — Ver producto por ID",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{product_url}}/products/{{product_id}}", "host": ["{{product_url}}"], "path": ["products", "{{product_id}}"] }
+          }
+        },
+        {
+          "name": "Admin — Actualizar producto",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Plan Internet 200MB\",\n  \"price\": 399.99,\n  \"stock\": 100\n}"
+            },
+            "url": { "raw": "{{product_url}}/products/{{product_id}}", "host": ["{{product_url}}"], "path": ["products", "{{product_id}}"] }
+          }
+        },
+        {
+          "name": "Admin — Desactivar producto",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{product_url}}/products/{{product_id}}", "host": ["{{product_url}}"], "path": ["products", "{{product_id}}"] }
+          }
+        },
+        {
+          "name": "Admin — Activar producto",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{product_url}}/products/{{product_id}}/activate", "host": ["{{product_url}}"], "path": ["products", "{{product_id}}", "activate"] }
+          }
+        },
+        {
+          "name": "Realizar compra",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product\": \"{{product_id}}\",\n  \"quantity\": 1,\n  \"fromAccountNumber\": \"{{account_number}}\"\n}"
+            },
+            "url": { "raw": "{{product_url}}/purchases", "host": ["{{product_url}}"], "path": ["purchases"] }
+          }
+        },
+        {
+          "name": "Mis compras",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{product_url}}/purchases/my", "host": ["{{product_url}}"], "path": ["purchases", "my"] }
+          }
+        },
+        {
+          "name": "Admin — Todas las compras",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{product_url}}/purchases", "host": ["{{product_url}}"], "path": ["purchases"] }
+          }
+        },
+        {
+          "name": "Admin — Ver compra por ID",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{product_url}}/purchases/ID_COMPRA", "host": ["{{product_url}}"], "path": ["purchases", "ID_COMPRA"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "FavoriteAccountService",
+      "description": "Gestión de cuentas favoritas y transferencias rápidas. Base URL: http://localhost:3004/paySmart/v1",
+      "item": [
+        {
+          "name": "Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{favorite_url}}/health", "host": ["{{favorite_url}}"], "path": ["health"] }
+          }
+        },
+        {
+          "name": "Agregar cuenta favorita",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"accountNumber\": \"NUMERO_CUENTA_FAVORITA\",\n  \"alias\": \"Cuenta mamá\"\n}"
+            },
+            "url": { "raw": "{{favorite_url}}/favoriteAccounts", "host": ["{{favorite_url}}"], "path": ["favoriteAccounts"] }
+          }
+        },
+        {
+          "name": "Listar mis favoritas",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{favorite_url}}/favoriteAccounts", "host": ["{{favorite_url}}"], "path": ["favoriteAccounts"] }
+          }
+        },
+        {
+          "name": "Editar alias",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"alias\": \"Cuenta papá\"\n}"
+            },
+            "url": { "raw": "{{favorite_url}}/favoriteAccounts/{{favorite_id}}", "host": ["{{favorite_url}}"], "path": ["favoriteAccounts", "{{favorite_id}}"] }
+          }
+        },
+        {
+          "name": "Eliminar favorita",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{favorite_url}}/favoriteAccounts/{{favorite_id}}", "host": ["{{favorite_url}}"], "path": ["favoriteAccounts", "{{favorite_id}}"] }
+          }
+        },
+        {
+          "name": "Desactivar favorita",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{favorite_url}}/favoriteAccounts/{{favorite_id}}/deactivate", "host": ["{{favorite_url}}"], "path": ["favoriteAccounts", "{{favorite_id}}", "deactivate"] }
+          }
+        },
+        {
+          "name": "Activar favorita",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{favorite_url}}/favoriteAccounts/{{favorite_id}}/activate", "host": ["{{favorite_url}}"], "path": ["favoriteAccounts", "{{favorite_id}}", "activate"] }
+          }
+        },
+        {
+          "name": "Transferencia rápida",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fromAccountNumber\": \"{{account_number}}\",\n  \"amount\": 100,\n  \"description\": \"Envío mensual\"\n}"
+            },
+            "url": { "raw": "{{favorite_url}}/favoriteAccounts/{{favorite_id}}/transfer", "host": ["{{favorite_url}}"], "path": ["favoriteAccounts", "{{favorite_id}}", "transfer"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ReportService",
+      "description": "Reportes administrativos. Base URL: http://localhost:3005/paySmart/v1",
+      "item": [
+        {
+          "name": "Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{report_url}}/health", "host": ["{{report_url}}"], "path": ["health"] }
+          }
+        },
+        {
+          "name": "Cuentas con más movimientos",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{report_url}}/reports/accounts-most-movements?order=desc&limit=10",
+              "host": ["{{report_url}}"],
+              "path": ["reports", "accounts-most-movements"],
+              "query": [
+                { "key": "order", "value": "desc" },
+                { "key": "limit", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Admin — Resumen de cuentas",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{report_url}}/reports/admin/accounts-overview", "host": ["{{report_url}}"], "path": ["reports", "admin", "accounts-overview"] }
+          }
+        }
+      ]
+    }
+  ]
+}
