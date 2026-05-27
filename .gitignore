@@ -3,6 +3,12 @@ node_modules/
 npm-debug.log*
 yarn.lock
 
+# Variables de entorno - .NET
+**/appsettings.json
+**/appsettings.Development.json
+**/appsettings.Production.json
+**/appsettings.Local.json
+
 # Logs
 logs/
 *.log
