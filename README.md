@@ -6,12 +6,13 @@ Sistema de pagos basado en arquitectura de microservicios, desarrollado como par
 
 ## Microservicios Implementados
 
-- **AuthService**: Autenticación y gestión de usuarios.
+- **AuthService**: Autenticación, gestión de usuarios y perfiles extendidos.
 - **AccountService**: Gestión de cuentas bancarias y saldo disponible.
 - **TransactionService**: Gestión de transacciones y depósitos entre cuentas bancarias.
 - **ProductService**: Gestión de productos disponibles para compra.
 - **FavoriteAccountService**: Gestión de cuentas favoritas y transferencias rápidas.
 - **ReportService**: Reportes administrativos de movimientos y cuentas.
+- **client-admin**: Frontend web (React + Vite) para administradores y clientes.
 
 ---
 
@@ -32,8 +33,9 @@ Sistema de pagos basado en arquitectura de microservicios, desarrollado como par
 ## Estado del Proyecto
 
 - Todos los microservicios funcionales y probados.
-- Registro, login, JWT, roles, verificación de email, recuperación de contraseña, creación de cuentas, transacciones, historial, productos, compras, cuentas favoritas y reportes implementados.
+- Registro por Admin, login, JWT, roles, verificación de email, recuperación de contraseña, perfiles extendidos (DPI, dirección, trabajo, ingresos), soft-delete de usuarios, creación de cuentas, transacciones, historial, productos, compras, cuentas favoritas y reportes implementados.
 - Arquitectura basada en **Clean Architecture** (AuthService) y buenas prácticas de microservicios.
+- Frontend SPA con panel diferenciado por rol (Admin / Cliente), rutas protegidas y conversor de divisas en tiempo real.
 
 ---
 
@@ -47,6 +49,7 @@ Sistema de pagos basado en arquitectura de microservicios, desarrollado como par
 | ProductService         | 3003   |
 | FavoriteAccountService | 3004   |
 | ReportService          | 3005   |
+| client-admin (dev)     | 5173   |
 
 ---
 
@@ -56,11 +59,14 @@ Microservicio de autenticación y gestión de usuarios.
 
 ### Funcionalidades
 
-- Registro de usuarios con verificación de email obligatoria.
-- Login con email o username, solo permite acceso a cuentas verificadas.
+- Registro de usuarios con verificación de email obligatoria (incluye perfil extendido: DPI, dirección, trabajo, ingresos).
+- Creación de clientes por parte del Administrador (sin necesidad de verificación de email).
+- Login con email o username; solo permite acceso a cuentas verificadas.
 - Reenvío de email de verificación.
 - Recuperación y reset de contraseña por email con token expirable.
-- Perfil de usuario autenticado.
+- Perfil de usuario autenticado y edición de perfil propio (nombre, dirección, trabajo, ingresos).
+- CRUD completo de clientes para administradores (listar, ver, editar, eliminar con soft-delete).
+- Soft-delete de usuarios (`is_deleted`, `deleted_at`).
 - Sistema de roles y permisos (USER_ROLE, ADMIN_ROLE).
 - Protecciones de seguridad: hashing con Argon2, JWT expirables, rate limiting, security headers.
 
@@ -72,6 +78,14 @@ Microservicio de autenticación y gestión de usuarios.
 - Validación y logging: FluentValidation, Serilog
 - Emails: SMTP (Gmail), plantillas HTML
 - Documentación: Swagger/OpenAPI
+
+### Migraciones de Base de Datos
+
+| Migración                     | Descripción                                                                                          |
+|-------------------------------|------------------------------------------------------------------------------------------------------|
+| `InitialAdd`                  | Tablas base: usuarios, roles, perfiles, emails, resets de contraseña                                 |
+| `AddProfileFields`            | Agrega `dpi`, `address`, `work_name`, `monthly_income`, `created_at`, `updated_at` a `user_profiles` |
+| `SoftDeleteAndRelationships`  | Agrega `is_deleted` y `deleted_at` a la tabla `users`                                                |
 
 ### Configuración
 
@@ -96,20 +110,26 @@ Copia `appsettings.example.json` como `appsettings.json` y completa los valores:
 ### Endpoints
 **Base URL:** `http://localhost:3000/api/v1`
 
-| Método | Ruta                        | Descripción                        | Authorization |
-|--------|-----------------------------|------------------------------------|:-------------:|
-| GET    | /health                     | Verificar salud del servidor       | No            |
-| POST   | /auth/register              | Registrar nuevo usuario            | No            |
-| POST   | /auth/verify-email          | Verificar email                    | No            |
-| POST   | /auth/resend-verification   | Reenviar email de verificación     | No            |
-| POST   | /auth/login                 | Iniciar sesión                     | No            |
-| POST   | /auth/forgot-password       | Solicitar reset de contraseña      | No            |
-| POST   | /auth/reset-password        | Confirmar reset de contraseña      | No            |
-| GET    | /auth/profile               | Ver perfil del usuario autenticado | Sí            |
-| POST   | /auth/profile/by-id         | Ver perfil por userId              | No            |
-| PUT    | /users/{userId}/role        | Actualizar role de un usuario      | Sí (Admin)    |
-| GET    | /users/{userId}/roles       | Ver roles de un usuario            | Sí (Admin)    |
-| GET    | /users/by-role/{roleName}   | Ver usuarios por role              | Sí (Admin)    |
+| Método | Ruta                              | Descripción                               | Authorization   |
+|--------|-----------------------------------|-------------------------------------------|:---------------:|
+| GET    | /health                           | Verificar salud del servidor              | No              |
+| POST   | /auth/register                    | Registrar nuevo usuario (auto-registro)   | No              |
+| POST   | /auth/verify-email                | Verificar email                           | No              |
+| POST   | /auth/resend-verification         | Reenviar email de verificación            | No              |
+| POST   | /auth/login                       | Iniciar sesión                            | No              |
+| POST   | /auth/forgot-password             | Solicitar reset de contraseña             | No              |
+| POST   | /auth/reset-password              | Confirmar reset de contraseña             | No              |
+| GET    | /auth/profile                     | Ver perfil del usuario autenticado        | Sí              |
+| PUT    | /auth/profile                     | Editar perfil propio (campos permitidos)  | Sí              |
+| POST   | /auth/profile/by-id               | Ver perfil por userId                     | No              |
+| POST   | /auth/admin/create-client         | Admin crea un nuevo cliente               | Sí (Admin)      |
+| GET    | /users/clients                    | Listar todos los clientes                 | Sí (Admin)      |
+| GET    | /users/clients/{userId}           | Ver cliente por ID                        | Sí (Admin)      |
+| PUT    | /users/clients/{userId}           | Editar cliente                            | Sí (Admin)      |
+| DELETE | /users/clients/{userId}           | Eliminar cliente (soft-delete)            | Sí (Admin)      |
+| PUT    | /users/{userId}/role              | Actualizar role de un usuario             | Sí (Admin)      |
+| GET    | /users/{userId}/roles             | Ver roles de un usuario                   | Sí (Admin)      |
+| GET    | /users/by-role/{roleName}         | Ver usuarios por role                     | Sí (Admin)      |
 
 #### Registrar usuario — Form-Data
 ```json
@@ -119,7 +139,28 @@ Copia `appsettings.example.json` como `appsettings.json` y completa los valores:
   "username": "usuario",
   "email": "correo@ejemplo.com",
   "password": "password",
-  "phone": "12345678"
+  "phone": "12345678",
+  "dpi": "1234567890123",
+  "address": "Zona 1, Ciudad de Guatemala",
+  "workName": "Empresa S.A.",
+  "monthlyIncome": 5000
+}
+```
+
+#### Admin crea cliente — JSON
+- Headers: `Authorization: Bearer <token_admin>`
+```json
+{
+  "name": "nombre",
+  "surname": "apellido",
+  "username": "usuario",
+  "email": "correo@ejemplo.com",
+  "password": "password",
+  "phone": "12345678",
+  "dpi": "1234567890123",
+  "address": "Zona 1, Ciudad de Guatemala",
+  "workName": "Empresa S.A.",
+  "monthlyIncome": 5000
 }
 ```
 
@@ -128,6 +169,18 @@ Copia `appsettings.example.json` como `appsettings.json` y completa los valores:
 {
   "emailOrUsername": "usuario_o_correo",
   "password": "password"
+}
+```
+
+#### Editar perfil propio — JSON
+- Headers: `Authorization: Bearer <token>`
+```json
+{
+  "name": "NuevoNombre",
+  "surname": "NuevoApellido",
+  "address": "Nueva dirección",
+  "workName": "Nuevo trabajo",
+  "monthlyIncome": 6000
 }
 ```
 
@@ -385,6 +438,79 @@ Ejemplo: `/reports/accounts-most-movements?order=desc&limit=5`
 
 ---
 
+## client-admin (Frontend)
+
+Aplicación web SPA desarrollada con React 19 + Vite. Ofrece dos experiencias diferenciadas según el rol del usuario autenticado.
+
+### Tecnologías
+
+- Framework: **React 19** + **Vite 8**
+- Estilos: **Tailwind CSS v4**
+- Componentes UI: **@material-tailwind/react**, **@heroicons/react**
+- Estado global: **Zustand 5** (con persistencia en localStorage)
+- Formularios: **react-hook-form**
+- Notificaciones: **react-hot-toast**
+- Routing: **react-router-dom v7**
+- HTTP: **Axios** (instancias por microservicio con interceptores JWT)
+
+### Funcionalidades
+
+- Autenticación con sesión persistente y expiración automática.
+- Panel diferenciado por rol: **Admin** y **Cliente**.
+- Rutas protegidas (`ProtectedRoute`) y guardias de rol (`RoleGuard`).
+- Sidebar responsivo con menú colapsable en móvil.
+
+### Variables de Entorno
+
+Crea un archivo `.env` en `client-admin/` con:
+
+```env
+VITE_AUTH_URL=http://localhost:3000/api/v1
+VITE_ACCOUNT_URL=http://localhost:3001/paySmart/v1
+VITE_TRANSACTION_URL=http://localhost:3002/paySmart/v1
+VITE_PRODUCT_URL=http://localhost:3003/paySmart/v1
+VITE_FAVORITE_URL=http://localhost:3004/paySmart/v1
+VITE_REPORT_URL=http://localhost:3005/paySmart/v1
+```
+
+### Módulos del Panel Admin
+
+| Módulo       | Ruta                     | Descripción                                                                         |
+|--------------|--------------------------|-------------------------------------------------------------------------------------|
+| Inicio       | `/dashboard`             | Reportes de cuentas con más movimientos y resumen de cuentas + conversor de divisas |
+| Clientes     | `/dashboard/clients`     | CRUD completo de clientes: crear, ver detalle, editar y eliminar                    |
+| Cuentas      | `/dashboard/accounts`    | Búsqueda y gestión de cuentas por número de cuenta                                  |
+| Transacciones| `/dashboard/transactions`| Historial de movimientos con filtros por tipo                                       |
+| Productos    | `/dashboard/products`    | Gestión de productos y listado de todas las compras                                 |
+
+### Módulos del Panel Cliente
+
+| Módulo        | Ruta                       | Descripción                                                        |
+|---------------|----------------------------|--------------------------------------------------------------------|
+| Inicio        | `/dashboard`               | Resumen de reportes propios + conversor de divisas en tiempo real  |
+| Mis Cuentas   | `/dashboard/accounts`      | Ver y crear cuentas bancarias (Ahorro, Monetaria, Empresarial)     |
+| Transacciones | `/dashboard/transactions`  | Realizar depósitos, transferencias, reversiones y ver historial    |
+| Productos     | `/dashboard/products`      | Ver productos disponibles, comprar y revisar mis compras           |
+| Favoritas     | `/dashboard/favorites`     | Gestionar cuentas favoritas y realizar transferencias rápidas      |
+| Mi Perfil     | `/dashboard/profile`       | Editar nombre, dirección, trabajo e ingresos mensuales             |
+
+### Conversor de Divisas
+
+El panel de inicio incluye un conversor de divisas en tiempo real que consume la API pública `open.er-api.com`. Soporta GTQ, USD, EUR, MXN, HNL, CRC, GBP, JPY, CAD y BRL.
+
+### Instalación
+
+```bash
+cd .\client-admin\
+# Crear .env con las variables de entorno listadas arriba
+pnpm install
+pnpm run dev
+```
+
+La app estará disponible en `http://localhost:5173`.
+
+---
+
 ## Estructura del Proyecto
 
 ```
@@ -392,16 +518,28 @@ paysmart/
 ├── auth-service/
 │   ├── src/
 │   │   ├── AuthService.Api/
+│   │   │   ├── Controllers/         # AuthController, UserController, HealthController
+│   │   │   ├── Extensions/          # Auth, RateLimiting, Security, ServiceCollection
+│   │   │   ├── Middlewares/         # GlobalExceptionMiddleware
+│   │   │   └── Models/
 │   │   ├── AuthService.Application/
+│   │   │   ├── DTOs/                # RegisterDto, LoginDto, AdminCreateClientDto, UpdateMyProfileDto, etc.
+│   │   │   ├── Interfaces/
+│   │   │   └── Services/            # AuthService, EmailService, JwtTokenService, UserManagementService
 │   │   ├── AuthService.Domain/
+│   │   │   ├── Entities/            # User, UserProfile, Role, UserRole, UserEmail, UserPasswordReset
+│   │   │   └── Interfaces/
 │   │   └── AuthService.Persistence/
+│   │       ├── Data/                # ApplicationDbContext, DataSeeder
+│   │       ├── Migrations/          # InitialAdd, AddProfileFields, SoftDeleteAndRelationships
+│   │       └── Repositories/
 │   ├── AuthService.sln
 │   └── global.json
 │
 ├── account-service/
 │   ├── configs/
 │   ├── middlewares/
-│   ├── src/
+│   ├── src/account/
 │   ├── .env.example
 │   ├── index.js
 │   └── package.json
@@ -409,7 +547,7 @@ paysmart/
 ├── transaction-service/
 │   ├── configs/
 │   ├── middlewares/
-│   ├── src/
+│   ├── src/transactions/
 │   ├── .env.example
 │   ├── index.js
 │   └── package.json
@@ -418,6 +556,8 @@ paysmart/
 │   ├── configs/
 │   ├── middlewares/
 │   ├── src/
+│   │   ├── product/
+│   │   └── purchase/
 │   ├── .env.example
 │   ├── index.js
 │   └── package.json
@@ -425,7 +565,7 @@ paysmart/
 ├── favoriteaccount-service/
 │   ├── configs/
 │   ├── middlewares/
-│   ├── src/
+│   ├── src/favoriteaccounts/
 │   ├── .env.example
 │   ├── index.js
 │   └── package.json
@@ -433,9 +573,31 @@ paysmart/
 ├── report-service/
 │   ├── configs/
 │   ├── middlewares/
-│   ├── src/
+│   ├── src/reports/
 │   ├── .env.example
 │   ├── index.js
+│   └── package.json
+│
+├── client-admin/                       ← Frontend SPA
+│   ├── public/
+│   ├── src/
+│   │   ├── app/
+│   │   │   ├── layouts/               # DashboardLayout (sidebar + header responsivo)
+│   │   │   └── router/                # AppRouter, ProtectedRoute, RoleGuard
+│   │   ├── features/
+│   │   │   ├── auth/                  # Login, ForgotPassword, ResetPassword, EditMyProfile
+│   │   │   ├── account/               # AccountPage, CreateAccountModal, accountStore
+│   │   │   ├── clients/               # AdminClientsPage, CreateClientModal, EditClientModal
+│   │   │   ├── transaction/           # TransactionPage, TransactionModal, transactionStore
+│   │   │   ├── product/               # ProductPage, BuyProductModal, CreateProductModal
+│   │   │   ├── favoriteaccount/       # FavoriteAccountPage, QuickTransferModal
+│   │   │   └── report/                # ReportPage, reportStore
+│   │   └── shared/
+│   │       ├── api/                   # Instancias Axios por microservicio
+│   │       ├── components/            # CurrencyConverter
+│   │       └── utils/
+│   ├── index.html
+│   ├── vite.config.js
 │   └── package.json
 │
 ├── postgre_db/
@@ -444,6 +606,7 @@ paysmart/
 ├── .gitignore
 ├── LICENSE
 └── README.md
+└── PaySmart.postman_collection.json
 ```
 
 ---
@@ -515,6 +678,14 @@ pnpm run dev
 ```bash
 cd .\report-service\
 # Copiar .env.example como .env y completar los valores
+pnpm install
+pnpm run dev
+```
+
+### client-admin (Frontend)
+```bash
+cd .\client-admin\
+# Crear .env con las variables VITE_AUTH_URL, VITE_ACCOUNT_URL, etc.
 pnpm install
 pnpm run dev
 ```
