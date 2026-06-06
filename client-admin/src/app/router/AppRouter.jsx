@@ -3,6 +3,7 @@ import { AuthPage } from '../../features/auth/pages/AuthPage.jsx';
 import { ResetPasswordPage } from '../../features/auth/pages/ResetPasswordPage.jsx';
 import { EditMyProfilePage } from '../../features/auth/pages/EditMyProfilePage.jsx';
 import { ProtectedRoute } from './ProtectedRoute.jsx';
+import { RoleGuard } from './RoleGuard.jsx';
 import { DashboardLayout } from '../layouts/DashboardLayout.jsx';
 import { AccountPage } from '../../features/account/pages/AccountPage.jsx';
 import { TransactionPage } from '../../features/transaction/pages/TransactionPage.jsx';
@@ -11,16 +12,18 @@ import { FavoriteAccountPage } from '../../features/favoriteaccount/pages/Favori
 import { ReportPage } from '../../features/report/pages/ReportPage.jsx';
 import { AdminClientsPage } from '../../features/clients/pages/AdminClientsPage.jsx';
 
+// ── Constantes de roles ──────────────────────────────────────────────────────
+const ADMIN = ['ADMIN_ROLE'];
+const USER  = ['ADMIN_ROLE', 'USER_ROLE'];
+
 export const AppRouter = () => {
   return (
     <Routes>
-      {/* Ruta pública: solo login */}
+      {/* Públicas */}
       <Route path='/' element={<AuthPage />} />
-
-      {/* Reset password sigue siendo necesaria (llega por email) */}
       <Route path='/reset-password' element={<ResetPasswordPage />} />
 
-      {/* Rutas protegidas dentro del DashboardLayout */}
+      {/* Protegidas — requieren sesión activa */}
       <Route
         path='/dashboard'
         element={
@@ -29,13 +32,16 @@ export const AppRouter = () => {
           </ProtectedRoute>
         }
       >
-        <Route index element={<ReportPage />} />
-        <Route path='accounts' element={<AccountPage />} />
-        <Route path='transactions' element={<TransactionPage />} />
-        <Route path='products' element={<ProductPage />} />
-        <Route path='favorites' element={<FavoriteAccountPage />} />
-        <Route path='clients' element={<AdminClientsPage />} />
-        <Route path='profile' element={<EditMyProfilePage />} />
+        {/* Accesibles para todos los usuarios autenticados */}
+        <Route index                  element={<RoleGuard allowedRoles={USER}><ReportPage /></RoleGuard>} />
+        <Route path='accounts'        element={<RoleGuard allowedRoles={USER}><AccountPage /></RoleGuard>} />
+        <Route path='transactions'    element={<RoleGuard allowedRoles={USER}><TransactionPage /></RoleGuard>} />
+        <Route path='products'        element={<RoleGuard allowedRoles={USER}><ProductPage /></RoleGuard>} />
+        <Route path='favorites'       element={<RoleGuard allowedRoles={USER}><FavoriteAccountPage /></RoleGuard>} />
+        <Route path='profile'         element={<RoleGuard allowedRoles={USER}><EditMyProfilePage /></RoleGuard>} />
+
+        {/* Exclusiva Admin */}
+        <Route path='clients'         element={<RoleGuard allowedRoles={ADMIN}><AdminClientsPage /></RoleGuard>} />
       </Route>
 
       {/* Fallback */}
