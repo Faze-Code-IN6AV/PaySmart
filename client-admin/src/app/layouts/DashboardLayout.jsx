@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import {
   CreditCardIcon, ArrowRightStartOnRectangleIcon, Bars3Icon, XMarkIcon,
@@ -7,6 +7,8 @@ import {
 } from '@heroicons/react/24/outline';
 import { StarIcon } from '@heroicons/react/24/outline';
 import { useAuthStore } from '../../features/auth/store/authStore.js';
+import { useInactivityTimer } from '../../shared/hooks/useInactivityTimer.js';
+import { InactivityWarningModal } from '../../shared/components/InactivityWarningModal.jsx';
 import logo from '../../assets/img/paysmart_logo.png';
 
 // Ítems de navegación para el ADMIN
@@ -33,9 +35,32 @@ export const DashboardLayout = () => {
   const location = useLocation();
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const isAdmin = user?.role === 'ADMIN_ROLE';
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // --- Inactividad ---
+  const [warningSeconds, setWarningSeconds] = useState(null); // null = modal oculto
+
+  const handleWarning = useCallback((secs) => {
+    setWarningSeconds(secs);
+  }, []);
+
+  const handleActive = useCallback(() => {
+    setWarningSeconds(null);
+  }, []);
+
+  useInactivityTimer({
+    enabled: isAuthenticated,
+    onWarning: handleWarning,
+    onActive: handleActive,
+  });
+
+  // "Continuar sesión" desde el modal — basta con cerrar el modal;
+  // el propio clic ya dispara handleActivity en el hook.
+  const handleContinue = () => setWarningSeconds(null);
+  // ------------------
 
   const handleLogout = () => { logout(); navigate('/'); };
 
@@ -46,6 +71,14 @@ export const DashboardLayout = () => {
 
   return (
     <div className='h-screen flex overflow-hidden' style={{ backgroundColor: '#0B1830' }}>
+
+      {/* Modal de advertencia por inactividad */}
+      {warningSeconds !== null && (
+        <InactivityWarningModal
+          secondsLeft={warningSeconds}
+          onContinue={handleContinue}
+        />
+      )}
 
       {/* ——— Sidebar — desktop ——— */}
       <aside
