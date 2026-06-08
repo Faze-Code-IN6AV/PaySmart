@@ -1,11 +1,11 @@
 using AuthService.Application.DTOs;
 using AuthService.Application.DTOs.Email;
+// RegisterDto removed — self-registration is no longer supported. Use AdminCreateClientAsync.
 
 namespace AuthService.Application.Interfaces;
 
 public interface IAuthService
 {
-    Task<RegisterResponseDto> RegisterAsync(RegisterDto registerDto);
     Task<RegisterResponseDto> AdminCreateClientAsync(AdminCreateClientDto dto);
     Task<AuthResponseDto> LoginAsync(LoginDto loginDto);
     Task<EmailResponseDto> VerifyEmailAsync(VerifyEmailDto verifyEmailDto);
