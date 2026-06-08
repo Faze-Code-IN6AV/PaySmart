@@ -6,6 +6,7 @@ import { showError } from '../../../shared/utils/toast.js';
 import { useAccountStore } from '../../account/store/accountStore.js';
 
 const ALLOWED_ROLES = ['ADMIN_ROLE', 'USER_ROLE'];
+const SESSION_DURATION_MS = 10 * 60 * 1000; // 10 minutos
 
 export const useAuthStore = create(
   persist(
@@ -50,6 +51,16 @@ export const useAuthStore = create(
         });
       },
 
+      /**
+       * Extiende la sesión 10 minutos desde ahora al detectar actividad.
+       * No hace llamada al backend — solo actualiza expiresAt en el store.
+       */
+      refreshSession: () => {
+        if (!get().token) return;
+        const newExpiresAt = new Date(Date.now() + SESSION_DURATION_MS).toISOString();
+        set({ expiresAt: newExpiresAt });
+      },
+
       logout: () => {
         set({
           user: null,
@@ -58,8 +69,6 @@ export const useAuthStore = create(
           isAuthenticated: false,
         });
         useAccountStore.getState().clearSearch();
-        // Redirigir al login independientemente de dónde se llame el logout
-        // (desde interceptor de axios, checkAuth, o botón manual)
         window.location.href = '/';
       },
 
@@ -68,7 +77,6 @@ export const useAuthStore = create(
           set({ loading: true, error: null });
           const { data } = await loginRequest({ emailOrUsername, password });
 
-          // El backend de PaySmart retorna: { success, message, token, userDetails, expiresAt }
           const role = data?.userDetails?.role;
 
           if (!ALLOWED_ROLES.includes(role)) {
@@ -96,7 +104,6 @@ export const useAuthStore = create(
             error: null,
           });
 
-          // Cargar perfil completo (DPI, dirección, ingresos, etc.) en background
           try {
             const profileRes = await getProfile();
             const fullProfile = profileRes.data?.data ?? profileRes.data;
@@ -115,8 +122,25 @@ export const useAuthStore = create(
         }
       },
 
-      // Actualizar datos del usuario en el store (tras editar perfil, etc.)
-      setUser: (updatedUser) => set({ user: updatedUser }),
+register: async (formData) => {
+  try {
+    set({ loading: true, error: null });
+    const { data } = await registerRequest(formData);
+    set({ loading: false });
+    return {
+      success: true,
+      emailVerificationRequired: data?.emailVerificationRequired ?? true,
+      data,
+    };
+  } catch (err) {
+    const message = err.response?.data?.message || 'Error al registrar usuario';
+    set({ error: message, loading: false });
+    return { success: false, error: message };
+  }
+},
+
+// Actualizar datos del usuario en el store (tras editar perfil, etc.)
+  setUser: (updatedUser) => set({ user: updatedUser }),
     }),
     { name: 'auth-PS-store' }
   )
