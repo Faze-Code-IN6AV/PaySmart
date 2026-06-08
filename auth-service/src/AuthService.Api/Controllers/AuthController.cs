@@ -30,25 +30,6 @@ public class AuthController(IAuthService authService, IUserManagementService use
     }
 
     /// <summary>
-    /// Registrar un nuevo usuario en el sistema.
-    /// </summary>
-    /// <remarks>Acepta multipart/form-data. Envía un email de verificación automáticamente tras el registro exitoso.</remarks>
-    /// <param name="registerDto">Datos del nuevo usuario (nombre, apellido, username, email, password, teléfono).</param>
-    /// <response code="201">Usuario registrado exitosamente. Se enviará un email de verificación.</response>
-    /// <response code="400">Datos inválidos o el usuario ya existe.</response>
-    [HttpPost("register")]
-    [RequestSizeLimit(10 * 1024 * 1024)]
-    [EnableRateLimiting("AuthPolicy")]
-    [Consumes("multipart/form-data")]
-    [ProducesResponseType(typeof(RegisterResponseDto), StatusCodes.Status201Created)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<RegisterResponseDto>> Register([FromForm] RegisterDto registerDto)
-    {
-        var result = await authService.RegisterAsync(registerDto);
-        return StatusCode(201, result);
-    }
-
-    /// <summary>
     /// Reenviar el email de verificación de cuenta.
     /// </summary>
     /// <param name="resendDto">Email del usuario al que reenviar la verificación.</param>

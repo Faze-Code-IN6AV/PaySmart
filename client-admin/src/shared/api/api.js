@@ -89,7 +89,6 @@ const handleResponseError = async (error) => {
   const status = error.response?.status;
   const isAuthEndpoint =
     original.url?.includes('/auth/login') ||
-    original.url?.includes('/auth/register') ||
     original.url?.includes('/auth/refresh');
 
   if (status === 401 && !isAuthEndpoint) {
