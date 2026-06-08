@@ -115,23 +115,6 @@ export const useAuthStore = create(
         }
       },
 
-      register: async (formData) => {
-        try {
-          set({ loading: true, error: null });
-          const { data } = await registerRequest(formData);
-          set({ loading: false });
-          return {
-            success: true,
-            emailVerificationRequired: data?.emailVerificationRequired ?? true,
-            data,
-          };
-        } catch (err) {
-          const message = err.response?.data?.message || 'Error al registrar usuario';
-          set({ error: message, loading: false });
-          return { success: false, error: message };
-        }
-      },
-
       // Actualizar datos del usuario en el store (tras editar perfil, etc.)
       setUser: (updatedUser) => set({ user: updatedUser }),
     }),
