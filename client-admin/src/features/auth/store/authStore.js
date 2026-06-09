@@ -16,7 +16,7 @@ export const useAuthStore = create(
       expiresAt: null,
       loading: false,
       error: null,
-      isLoadingAuth: true,
+      isLoadingAuth: false,
       isAuthenticated: false,
 
       // Verifica si hay sesión activa con un rol válido y que no haya expirado
@@ -142,6 +142,17 @@ register: async (formData) => {
 // Actualizar datos del usuario en el store (tras editar perfil, etc.)
   setUser: (updatedUser) => set({ user: updatedUser }),
     }),
-    { name: 'auth-PS-store' }
+    { 
+      name: 'auth-PS-store',
+      partialize: (state) => ({
+        user: state.user,
+        token: state.token,
+        expiresAt: state.expiresAt,
+        isAuthenticated: state.isAuthenticated,
+      }),
+      onRehydrateStorage: () => (state) => {
+        if (state) state.isLoadingAuth = false;
+      },
+    }
   )
 );
