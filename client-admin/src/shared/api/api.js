@@ -1,5 +1,6 @@
 import axios from '../utils/axios.js';
 import { useAuthStore } from '../../features/auth/store/authStore.js';
+import { showWarning } from '../utils/toast.js';
 
 const axiosAuth = axios.create({
   baseURL: import.meta.env.VITE_AUTH_URL,
@@ -83,6 +84,12 @@ const handleExpiredSession = (error) => {
 };
 
 const handleResponseError = async (error) => {
+  // Feedback visual cuando la petición falla por timeout
+  if (error.code === 'ECONNABORTED' || error.message?.toLowerCase().includes('timeout')) {
+    showWarning('⏱ La petición tardó demasiado. Verifica tu conexión e intenta de nuevo.');
+    return Promise.reject(error);
+  }
+
   const original = error.config;
   if (!original || original._retry) return Promise.reject(error);
 
