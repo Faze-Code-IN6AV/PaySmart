@@ -213,6 +213,17 @@ export const DashboardLayout = () => {
                 </div>
               )}
 
+              {/* Nombre del usuario */}
+              <span style={{
+                fontSize: '13px', fontWeight: 600,
+                color: isAdmin ? '#FFE968' : '#ffffff',
+                maxWidth: '120px',
+                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                flexShrink: 0,
+              }}>
+                {user?.firstName ?? user?.username ?? 'Usuario'}
+              </span>
+
               <div style={{
                 width: '32px', height: '32px', borderRadius: '50%', flexShrink: 0,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
