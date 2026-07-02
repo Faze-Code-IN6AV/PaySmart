@@ -2,7 +2,6 @@
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { MaterialIcons } from "@expo/vector-icons";
-import { StyleSheet, Text, View } from "react-native";
 
 import { AccountsScreen } from "../features/accounts/screens/AccountsScreen";
 import { AccountDetailScreen } from "../features/accounts/screens/AccountDetailScreen";
@@ -16,21 +15,14 @@ import { ProductDetailScreen } from "../features/products/screens/ProductDetailS
 import { ProductsScreen } from "../features/products/screens/ProductsScreen";
 import { AddFavoriteScreen } from "../features/favorites/screens/AddFavoriteScreen";
 import { FavoritesScreen } from "../features/favorites/screens/FavoritesScreen";
-import { COLORS, FONT_SIZE, SPACING } from "../shared/constants/theme";
+import { ProfileScreen } from "../features/profile/ProfileScreen";
+import { COLORS } from "../shared/constants/theme";
 
 const Tab = createBottomTabNavigator();
 const AccountsStackNav = createNativeStackNavigator();
 const TransactionsStackNav = createNativeStackNavigator();
 const ProductsStackNav = createNativeStackNavigator();
 const FavoritesStackNav = createNativeStackNavigator();
-
-function PlaceholderScreen({ title }) {
-  return (
-    <View style={styles.placeholderContainer}>
-      <Text style={styles.placeholderTitle}>{title}</Text>
-    </View>
-  );
-}
 
 function AccountsStack() {
   return (
@@ -72,10 +64,6 @@ function FavoritesStack() {
   );
 }
 
-function ProfileScreen() {
-  return <PlaceholderScreen title="Perfil" />;
-}
-
 export function MainTabs() {
   return (
     <Tab.Navigator
@@ -112,18 +100,3 @@ export function MainTabs() {
   );
 }
 
-const styles = StyleSheet.create({
-  placeholderContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: COLORS.background,
-    padding: SPACING.xl,
-  },
-  placeholderTitle: {
-    fontSize: FONT_SIZE.lg,
-    color: COLORS.primary,
-    fontWeight: "600",
-    textAlign: "center",
-  },
-});

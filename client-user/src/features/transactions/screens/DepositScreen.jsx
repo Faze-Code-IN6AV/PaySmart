@@ -1,7 +1,7 @@
 // /Users/diego/Tareas/Taller/PaySmart/client-user/src/features/transactions/screens/DepositScreen.jsx
 import { Alert, ScrollView, StyleSheet, Text } from "react-native";
 import { Controller, useForm } from "react-hook-form";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 
 import { Button } from "../../../shared/components/common/Button";
 import { Input } from "../../../shared/components/common/Input";
@@ -10,10 +10,11 @@ import { useTransactions } from "../hooks/useTransactions";
 
 export function DepositScreen() {
   const navigation = useNavigation();
+  const route = useRoute();
   const { deposit, loading, error } = useTransactions();
   const { control, handleSubmit, formState: { errors } } = useForm({
     defaultValues: {
-      accountNumber: "",
+      accountNumber: route?.params?.accountNumber || "",
       amount: "",
       description: "",
     },

@@ -41,8 +41,8 @@ export function AccountDetailScreen() {
       </Card>
 
       <View style={styles.actions}>
-        <Button title="Depósito" variant="secondary" onPress={() => navigation.navigate("Deposit")} />
-        <Button title="Transferencia" onPress={() => navigation.navigate("Transfer")} />
+        <Button title="Depósito" variant="secondary" onPress={() => navigation.navigate("Deposit", { accountNumber: account?.accountNumber })} />
+        <Button title="Transferencia" onPress={() => navigation.navigate("Transfer", { accountNumber: account?.accountNumber })} />
       </View>
 
       <Button title="Volver" variant="secondary" onPress={() => navigation.goBack()} />

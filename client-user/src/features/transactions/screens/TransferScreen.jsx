@@ -1,7 +1,7 @@
 // /Users/diego/Tareas/Taller/PaySmart/client-user/src/features/transactions/screens/TransferScreen.jsx
 import { Alert, ScrollView, StyleSheet, Text } from "react-native";
 import { Controller, useForm } from "react-hook-form";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 
 import { Button } from "../../../shared/components/common/Button";
 import { Input } from "../../../shared/components/common/Input";
@@ -10,10 +10,11 @@ import { useTransactions } from "../hooks/useTransactions";
 
 export function TransferScreen() {
   const navigation = useNavigation();
+  const route = useRoute();
   const { transfer, loading, error } = useTransactions();
   const { control, handleSubmit, formState: { errors } } = useForm({
     defaultValues: {
-      fromAccountNumber: "",
+      fromAccountNumber: route?.params?.accountNumber || "",
       toAccountNumber: "",
       amount: "",
       description: "",
