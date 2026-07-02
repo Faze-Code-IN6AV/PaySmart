@@ -4,6 +4,18 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { MaterialIcons } from "@expo/vector-icons";
 import { StyleSheet, Text, View } from "react-native";
 
+import { AccountsScreen } from "../features/accounts/screens/AccountsScreen";
+import { AccountDetailScreen } from "../features/accounts/screens/AccountDetailScreen";
+import { CreateAccountScreen } from "../features/accounts/screens/CreateAccountScreen";
+import { DepositScreen } from "../features/transactions/screens/DepositScreen";
+import { TransactionHistoryScreen } from "../features/transactions/screens/TransactionHistoryScreen";
+import { TransactionsScreen } from "../features/transactions/screens/TransactionsScreen";
+import { TransferScreen } from "../features/transactions/screens/TransferScreen";
+import { MyPurchasesScreen } from "../features/products/screens/MyPurchasesScreen";
+import { ProductDetailScreen } from "../features/products/screens/ProductDetailScreen";
+import { ProductsScreen } from "../features/products/screens/ProductsScreen";
+import { AddFavoriteScreen } from "../features/favorites/screens/AddFavoriteScreen";
+import { FavoritesScreen } from "../features/favorites/screens/FavoritesScreen";
 import { COLORS, FONT_SIZE, SPACING } from "../shared/constants/theme";
 
 const Tab = createBottomTabNavigator();
@@ -23,9 +35,9 @@ function PlaceholderScreen({ title }) {
 function AccountsStack() {
   return (
     <AccountsStackNav.Navigator screenOptions={{ headerShown: false }}>
-      <AccountsStackNav.Screen name="AccountsList" component={() => <PlaceholderScreen title="Cuentas" />} />
-      <AccountsStackNav.Screen name="CreateAccount" component={() => <PlaceholderScreen title="Crear cuenta" />} />
-      <AccountsStackNav.Screen name="AccountDetail" component={() => <PlaceholderScreen title="Detalle de cuenta" />} />
+      <AccountsStackNav.Screen name="AccountsList" component={AccountsScreen} />
+      <AccountsStackNav.Screen name="CreateAccount" component={CreateAccountScreen} />
+      <AccountsStackNav.Screen name="AccountDetail" component={AccountDetailScreen} />
     </AccountsStackNav.Navigator>
   );
 }
@@ -33,10 +45,10 @@ function AccountsStack() {
 function TransactionsStack() {
   return (
     <TransactionsStackNav.Navigator screenOptions={{ headerShown: false }}>
-      <TransactionsStackNav.Screen name="TransactionsList" component={() => <PlaceholderScreen title="Transacciones" />} />
-      <TransactionsStackNav.Screen name="Deposit" component={() => <PlaceholderScreen title="Depósito" />} />
-      <TransactionsStackNav.Screen name="Transfer" component={() => <PlaceholderScreen title="Transferencia" />} />
-      <TransactionsStackNav.Screen name="TransactionHistory" component={() => <PlaceholderScreen title="Historial" />} />
+      <TransactionsStackNav.Screen name="TransactionsList" component={TransactionsScreen} />
+      <TransactionsStackNav.Screen name="Deposit" component={DepositScreen} />
+      <TransactionsStackNav.Screen name="Transfer" component={TransferScreen} />
+      <TransactionsStackNav.Screen name="TransactionHistory" component={TransactionHistoryScreen} />
     </TransactionsStackNav.Navigator>
   );
 }
@@ -44,9 +56,9 @@ function TransactionsStack() {
 function ProductsStack() {
   return (
     <ProductsStackNav.Navigator screenOptions={{ headerShown: false }}>
-      <ProductsStackNav.Screen name="ProductsList" component={() => <PlaceholderScreen title="Productos" />} />
-      <ProductsStackNav.Screen name="ProductDetail" component={() => <PlaceholderScreen title="Detalle de producto" />} />
-      <ProductsStackNav.Screen name="MyPurchases" component={() => <PlaceholderScreen title="Mis compras" />} />
+      <ProductsStackNav.Screen name="ProductsList" component={ProductsScreen} />
+      <ProductsStackNav.Screen name="ProductDetail" component={ProductDetailScreen} />
+      <ProductsStackNav.Screen name="MyPurchases" component={MyPurchasesScreen} />
     </ProductsStackNav.Navigator>
   );
 }
@@ -54,8 +66,8 @@ function ProductsStack() {
 function FavoritesStack() {
   return (
     <FavoritesStackNav.Navigator screenOptions={{ headerShown: false }}>
-      <FavoritesStackNav.Screen name="FavoritesList" component={() => <PlaceholderScreen title="Favoritos" />} />
-      <FavoritesStackNav.Screen name="AddFavorite" component={() => <PlaceholderScreen title="Agregar favorito" />} />
+      <FavoritesStackNav.Screen name="FavoritesList" component={FavoritesScreen} />
+      <FavoritesStackNav.Screen name="AddFavorite" component={AddFavoriteScreen} />
     </FavoritesStackNav.Navigator>
   );
 }
