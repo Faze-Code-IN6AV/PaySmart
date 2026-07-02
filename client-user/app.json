@@ -1,0 +1,26 @@
+{
+  "expo": {
+    "name": "client-user",
+    "slug": "client-user",
+    "scheme": "client-user",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0A3D62"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "icon": "./assets/icon.png",
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#0A3D62"
+      }
+    },
+    "ios": {
+      "supportsTablet": true
+    }
+  }
+}
