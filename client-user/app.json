@@ -7,11 +7,13 @@
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/splash.png",
+      "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#0A3D62"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "icon": "./assets/icon.png",
     "android": {
       "adaptiveIcon": {
@@ -21,6 +23,9 @@
     },
     "ios": {
       "supportsTablet": true
-    }
+    },
+    "plugins": [
+      "expo-secure-store"
+    ]
   }
 }

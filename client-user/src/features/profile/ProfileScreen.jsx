@@ -97,7 +97,7 @@ export function ProfileScreen() {
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Card style={styles.card}>
         <View style={styles.header}>
-          <Image source={require("../../../assets/avatarDefault.png")} style={styles.avatar} />
+          <Image source={require("../../../assets/avatarDefault-1749508519496.png")} style={styles.avatar} />
           <View style={styles.headerInfo}>
             <Text style={styles.title}>{profile?.name || "Usuario"}</Text>
             <Text style={styles.subtitle}>{profile?.email || "Correo no disponible"}</Text>

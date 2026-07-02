@@ -28,7 +28,23 @@ export function useAuth() {
       setError(payload?.message || "No se pudo iniciar sesión.");
       return { success: false };
     } catch (err) {
-      setError(err?.response?.data?.message || "Ocurrió un error al iniciar sesión.");
+      const responseMessage =
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        err?.response?.data?.errors?.[0]?.message ||
+        err?.message ||
+        "Ocurrió un error al iniciar sesión.";
+
+      if (__DEV__) {
+        console.error("[useAuth][handleLogin] login error", {
+          message: err?.message,
+          responseData: err?.response?.data,
+          status: err?.response?.status,
+          requestUrl: `${authClient.defaults.baseURL}/login`,
+        });
+      }
+
+      setError(responseMessage);
       return { success: false };
     } finally {
       setLoading(false);

@@ -23,6 +23,12 @@ export function createHttpClient(baseURL) {
       };
     }
 
+    if (__DEV__) {
+      const method = (config.method || "get").toUpperCase();
+      const requestUrl = `${config.baseURL || ""}${config.url || ""}`;
+      console.debug("[HTTP][request]", method, requestUrl, { headers: config.headers });
+    }
+
     return config;
   });
 
@@ -31,7 +37,19 @@ export function createHttpClient(baseURL) {
     async (error) => {
       const status = error?.response?.status;
       const url = error?.config?.url || "";
+      const requestUrl = `${error?.config?.baseURL || ""}${url}`;
       const isAuthRoute = /\/auth\//.test(url) || url.includes("/login") || url.includes("/register") || url.includes("/forgot-password") || url.includes("/reset-password") || url.includes("/verify-email") || url.includes("/resend-verification");
+
+      if (__DEV__) {
+        console.error("[HTTP][response error]", {
+          message: error.message,
+          status,
+          requestUrl,
+          responseData: error?.response?.data,
+          responseHeaders: error?.response?.headers,
+          requestHeaders: error?.config?.headers,
+        });
+      }
 
       if (status === 401 && !isAuthRoute) {
         await useAuthStore.getState().logout();
