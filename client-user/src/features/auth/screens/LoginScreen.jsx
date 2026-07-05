@@ -1,9 +1,10 @@
 // /Users/diego/Tareas/Taller/PaySmart/client-user/src/features/auth/screens/LoginScreen.jsx
-import { Image, StyleSheet, Text, View } from "react-native";
+import { Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Controller, useForm } from "react-hook-form";
 
 import { Button } from "../../../shared/components/common/Button";
 import { Input } from "../../../shared/components/common/Input";
+import { ScreenBackground } from "../../../shared/components/common/ScreenBackground";
 import { COLORS, FONT_SIZE, SPACING } from "../../../shared/constants/theme";
 import { useAuth } from "../hooks/useAuth";
 
@@ -25,91 +26,123 @@ export function LoginScreen({ navigation }) {
   };
 
   return (
-    <View style={styles.container}>
-      <Image source={require("../../../../assets/paysmart_logo.png")} style={styles.logo} />
-      <Text style={styles.title}>Iniciar sesión</Text>
-      <Text style={styles.subtitle}>Accede a tu cuenta de PaySmart</Text>
-
-      {error ? <Text style={styles.errorText}>{error}</Text> : null}
-
-      <Controller
-        control={control}
-        name="emailOrUsername"
-        rules={{ required: "Este campo es obligatorio" }}
-        render={({ field: { onChange, value, onBlur } }) => (
-          <Input
-            label="Correo o usuario"
-            placeholder="usuario@ejemplo.com"
-            value={value}
-            onChangeText={onChange}
-            onBlur={onBlur}
-            autoCapitalize="none"
-            error={errors.emailOrUsername?.message}
+    <ScreenBackground>
+    <KeyboardAvoidingView
+      style={styles.flex}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+    >
+      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+        <View style={styles.card}>
+          <Image
+            source={require("../../../../assets/paysmart_logo_outline_v2_card.png")}
+            style={styles.logo}
+            resizeMode="contain"
           />
-        )}
-      />
+          <Text style={styles.title}>Iniciar Sesión</Text>
+          <Text style={styles.subtitle}>Ingresa tus credenciales para acceder a PaySmart</Text>
 
-      <Controller
-        control={control}
-        name="password"
-        rules={{ required: "Este campo es obligatorio" }}
-        render={({ field: { onChange, value, onBlur } }) => (
-          <Input
-            label="Contraseña"
-            placeholder="••••••••"
-            secureTextEntry
-            value={value}
-            onChangeText={onChange}
-            onBlur={onBlur}
-            error={errors.password?.message}
+          {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
+          <Controller
+            control={control}
+            name="emailOrUsername"
+            rules={{ required: "El email o username es obligatorio" }}
+            render={({ field: { onChange, value, onBlur } }) => (
+              <Input
+                label="Email o Username"
+                placeholder="email@example.com o username"
+                value={value}
+                onChangeText={onChange}
+                onBlur={onBlur}
+                autoCapitalize="none"
+                error={errors.emailOrUsername?.message}
+              />
+            )}
           />
-        )}
-      />
 
-      <Button title="Ingresar" onPress={handleSubmit(onSubmit)} loading={loading} />
+          <Controller
+            control={control}
+            name="password"
+            rules={{ required: "La contraseña es obligatoria" }}
+            render={({ field: { onChange, value, onBlur } }) => (
+              <Input
+                label="Contraseña"
+                placeholder="••••••••"
+                secureTextEntry
+                value={value}
+                onChangeText={onChange}
+                onBlur={onBlur}
+                error={errors.password?.message}
+              />
+            )}
+          />
 
-      <Text style={styles.linkText} onPress={() => navigation.navigate("Register")}>
-        ¿No tienes cuenta? Regístrate
-      </Text>
-    </View>
+          <Button title={loading ? "Iniciando sesión..." : "Iniciar Sesión"} onPress={handleSubmit(onSubmit)} loading={loading} />
+
+          <Text style={styles.linkText} onPress={() => navigation.navigate("ForgotPassword")}>
+            ¿Olvidaste tu contraseña?
+          </Text>
+        </View>
+
+        <Text style={styles.footerNote}>
+          Las cuentas son creadas únicamente por el administrador del banco.
+        </Text>
+      </ScrollView>
+    </KeyboardAvoidingView>
+    </ScreenBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  flex: {
     flex: 1,
+  },
+  container: {
+    flexGrow: 1,
     justifyContent: "center",
+    padding: SPACING.lg,
+  },
+  card: {
+    backgroundColor: COLORS.surface,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: COLORS.borderStrong,
     padding: SPACING.xl,
-    backgroundColor: COLORS.background,
   },
   logo: {
-    width: 140,
-    height: 140,
+    width: 96,
+    height: 90,
     alignSelf: "center",
-    marginBottom: SPACING.lg,
+    marginBottom: SPACING.md,
   },
   title: {
-    fontSize: FONT_SIZE.xl,
+    fontSize: FONT_SIZE.xxl,
     fontWeight: "700",
-    color: COLORS.primary,
+    color: COLORS.text,
     textAlign: "center",
     marginBottom: SPACING.xs,
   },
   subtitle: {
-    fontSize: FONT_SIZE.md,
-    color: COLORS.textLight,
+    fontSize: FONT_SIZE.sm,
+    color: COLORS.primary,
     textAlign: "center",
     marginBottom: SPACING.xl,
   },
   errorText: {
-    color: COLORS.error,
+    color: "#fca5a5",
     marginBottom: SPACING.md,
     textAlign: "center",
   },
   linkText: {
     marginTop: SPACING.lg,
-    color: COLORS.secondary,
+    color: COLORS.primary,
     textAlign: "center",
     fontWeight: "600",
+  },
+  footerNote: {
+    marginTop: SPACING.lg,
+    color: "rgba(255,255,255,0.3)",
+    fontSize: FONT_SIZE.xs,
+    textAlign: "center",
   },
 });

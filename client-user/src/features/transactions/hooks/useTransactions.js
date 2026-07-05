@@ -68,7 +68,8 @@ export function useTransactions() {
 
     try {
       const response = await transactionClient.get(`/transaction/${accountNumber}`);
-      const data = response?.data?.data || response?.data || [];
+      // El backend responde { transactions: [...] }, no { data: [...] }.
+      const data = response?.data?.transactions || response?.data?.data || response?.data || [];
       const normalized = Array.isArray(data) ? data : [];
       const mapped = normalized.map((item) => ({
         ...item,
@@ -84,16 +85,23 @@ export function useTransactions() {
     }
   }, []);
 
+  // El backend responde { transactions: [...] } (hasta 5), igual que el
+  // historial completo — no un solo objeto.
   const getLastTransaction = useCallback(async (accountNumber) => {
     setLoading(true);
     setError("");
 
     try {
       const response = await transactionClient.get(`/transaction/${accountNumber}/last`);
-      return response?.data?.data || response?.data;
+      const data = response?.data?.transactions || response?.data?.data || response?.data || [];
+      const normalized = Array.isArray(data) ? data : [];
+      return normalized.map((item) => ({
+        ...item,
+        normalizedType: String(item?.type || "").toUpperCase(),
+      }));
     } catch (err) {
       setError(err?.response?.data?.message || "No se pudo cargar la última transacción.");
-      return null;
+      return [];
     } finally {
       setLoading(false);
     }

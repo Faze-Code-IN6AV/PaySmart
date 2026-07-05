@@ -14,7 +14,8 @@ export function useFavorites() {
 
     try {
       const response = await favoriteClient.get("/favoriteAccounts");
-      const data = response?.data?.data || response?.data || [];
+      // El backend responde { favorites: [...] }, no { data: [...] }.
+      const data = response?.data?.favorites || response?.data?.data || response?.data || [];
       setFavorites(Array.isArray(data) ? data : []);
       return data;
     } catch (err) {

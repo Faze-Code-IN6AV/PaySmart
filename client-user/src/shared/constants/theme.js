@@ -1,15 +1,22 @@
 // /Users/diego/Tareas/Taller/PaySmart/client-user/src/shared/constants/theme.js
+// Paleta oficial de PaySmart (idéntica a client-admin/src/styles/index.css)
 export const COLORS = {
-  primary: "#0A3D62",
-  secondary: "#10B981",
-  background: "#f8fafc",
-  surface: "#ffffff",
-  text: "#0f172a",
-  textLight: "#64748b",
+  primary: "#41D2F2", // celeste — acentos, botones, textos destacados
+  secondary: "#FFE968", // amarillo — montos, resaltados
+  mainBlue: "#162C5F", // tarjetas / superficies
+  secondaryBlue: "#0B1830", // fondo general / inputs
+  background: "#0B1830",
+  surface: "#162C5F",
+  surfaceAlt: "rgba(11,24,48,0.4)",
+  text: "#FFFFFF",
+  textLight: "rgba(255,255,255,0.6)",
+  textFaint: "rgba(255,255,255,0.35)",
   error: "#ef4444",
-  success: "#10b981",
-  warning: "#f59e0b",
-  border: "#e2e8f0",
+  success: "#41D2F2",
+  warning: "#FFE968",
+  border: "rgba(65,210,242,0.25)",
+  borderStrong: "#41D2F2",
+  onPrimary: "#0B1830", // texto sobre fondo celeste
 };
 
 export const SPACING = {

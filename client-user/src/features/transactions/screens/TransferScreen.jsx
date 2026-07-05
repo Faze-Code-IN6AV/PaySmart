@@ -31,7 +31,7 @@ export function TransferScreen() {
     const result = await transfer(values);
     if (result) {
       Alert.alert("Transferencia exitosa", "La transferencia se registró correctamente.");
-      navigation.goBack();
+      navigation.reset({ index: 0, routes: [{ name: "TransactionsList" }] });
     }
   };
 

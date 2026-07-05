@@ -4,6 +4,7 @@ import { Controller, useForm } from "react-hook-form";
 
 import { Button } from "../../../shared/components/common/Button";
 import { Input } from "../../../shared/components/common/Input";
+import { ScreenBackground } from "../../../shared/components/common/ScreenBackground";
 import { COLORS, FONT_SIZE, SPACING } from "../../../shared/constants/theme";
 import { useAuth } from "../hooks/useAuth";
 
@@ -38,6 +39,7 @@ export function RegisterScreen({ navigation }) {
   };
 
   return (
+    <ScreenBackground>
     <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
       <Text style={styles.title}>Crear cuenta</Text>
       <Text style={styles.subtitle}>Regístrate como cliente de PaySmart</Text>
@@ -138,6 +140,7 @@ export function RegisterScreen({ navigation }) {
         ¿Ya tienes cuenta? Inicia sesión
       </Text>
     </ScrollView>
+    </ScreenBackground>
   );
 }
 
@@ -145,7 +148,6 @@ const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
     padding: SPACING.xl,
-    backgroundColor: COLORS.background,
     paddingBottom: SPACING.xxl,
   },
   title: {

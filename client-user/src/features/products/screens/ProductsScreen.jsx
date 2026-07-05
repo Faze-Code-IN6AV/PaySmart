@@ -1,10 +1,11 @@
 // /Users/diego/Tareas/Taller/PaySmart/client-user/src/features/products/screens/ProductsScreen.jsx
 import { useEffect } from "react";
-import { ScrollView, StyleSheet, Text } from "react-native";
+import { RefreshControl, ScrollView, StyleSheet, Text } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 
 import { Button } from "../../../shared/components/common/Button";
 import { Card, EmptyState, LoadingSpinner } from "../../../shared/components/common/Common";
+import { ScreenBackground } from "../../../shared/components/common/ScreenBackground";
 import { COLORS, FONT_SIZE, SPACING } from "../../../shared/constants/theme";
 import { useProducts } from "../hooks/useProducts";
 
@@ -23,7 +24,12 @@ export function ProductsScreen() {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScreenBackground>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      refreshControl={<RefreshControl refreshing={loading} onRefresh={loadProducts} tintColor={COLORS.primary} />}
+    >
       <Text style={styles.title}>Productos</Text>
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
       {!products.length && !error ? <EmptyState title="Sin productos" description="No hay productos disponibles por el momento." /> : null}
@@ -37,13 +43,13 @@ export function ProductsScreen() {
         </Card>
       ))}
     </ScrollView>
+    </ScreenBackground>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
   content: {
     padding: SPACING.lg,

@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { ScrollView, StyleSheet, Text } from "react-native";
 
 import { Card, EmptyState, LoadingSpinner } from "../../../shared/components/common/Common";
+import { ScreenBackground } from "../../../shared/components/common/ScreenBackground";
 import { COLORS, FONT_SIZE, SPACING } from "../../../shared/constants/theme";
 import { useProducts } from "../hooks/useProducts";
 
@@ -18,6 +19,7 @@ export function MyPurchasesScreen() {
   }
 
   return (
+    <ScreenBackground>
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Text style={styles.title}>Mis compras</Text>
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
@@ -31,13 +33,13 @@ export function MyPurchasesScreen() {
         </Card>
       ))}
     </ScrollView>
+    </ScreenBackground>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
   content: {
     padding: SPACING.lg,

@@ -20,12 +20,43 @@ export const AuthPage = () => {
 
   return (
     <div
-      className='min-h-screen flex items-center justify-center p-4'
+      className='min-h-screen flex items-center justify-center p-4 relative overflow-hidden'
       style={{ backgroundColor: '#0B1830' }}
     >
+      {/* Fondo decorativo elegante */}
+      <div className='absolute inset-0 pointer-events-none' style={{ zIndex: 0 }}>
+        <div style={{
+          position: 'absolute', top: '-180px', left: '-160px',
+          width: '520px', height: '520px', borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(65,210,242,0.10) 0%, transparent 70%)',
+        }} />
+        <div style={{
+          position: 'absolute', bottom: '-220px', right: '-180px',
+          width: '600px', height: '600px', borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(255,233,104,0.06) 0%, transparent 70%)',
+        }} />
+        <div style={{
+          position: 'absolute', top: '20%', right: '8%',
+          width: '260px', height: '260px', borderRadius: '50%',
+          border: '1px solid rgba(65,210,242,0.1)',
+        }} />
+        <div style={{
+          position: 'absolute', top: '26%', right: '11%',
+          width: '160px', height: '160px', borderRadius: '50%',
+          border: '1px solid rgba(65,210,242,0.14)',
+        }} />
+        <div style={{
+          position: 'absolute', inset: 0,
+          backgroundImage: 'radial-gradient(circle, rgba(65,210,242,0.06) 1px, transparent 1px)',
+          backgroundSize: '26px 26px',
+          maskImage: 'radial-gradient(ellipse at center, black 0%, transparent 70%)',
+          WebkitMaskImage: 'radial-gradient(ellipse at center, black 0%, transparent 70%)',
+        }} />
+      </div>
+
       <div
-        className='w-full max-w-xl rounded-xl shadow-2xl p-6 md:p-10 animate-fadeIn'
-        style={{ backgroundColor: '#162C5F', border: '1px solid #41D2F2' }}
+        className='w-full max-w-xl rounded-xl shadow-2xl p-6 md:p-10 animate-fadeIn relative'
+        style={{ backgroundColor: '#162C5F', border: '1px solid #41D2F2', zIndex: 1 }}
       >
         <div className='flex justify-center mb-6'>
           <img src={logo} alt='PaySmart Logo' className='h-20 w-auto object-contain' />

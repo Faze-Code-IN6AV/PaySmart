@@ -1,10 +1,11 @@
 // /Users/diego/Tareas/Taller/PaySmart/client-user/src/features/transactions/screens/TransactionHistoryScreen.jsx
-import { useEffect } from "react";
-import { Alert, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useEffect, useState } from "react";
+import { Alert, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 
 import { Button } from "../../../shared/components/common/Button";
 import { Card, EmptyState, LoadingSpinner } from "../../../shared/components/common/Common";
+import { ScreenBackground } from "../../../shared/components/common/ScreenBackground";
 import { COLORS, FONT_SIZE, SPACING } from "../../../shared/constants/theme";
 import { useTransactions } from "../hooks/useTransactions";
 
@@ -13,12 +14,20 @@ export function TransactionHistoryScreen() {
   const route = useRoute();
   const accountNumber = route?.params?.accountNumber || "";
   const { transactions, loading, error, loadHistory, reverse } = useTransactions();
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     if (accountNumber) {
       loadHistory(accountNumber);
     }
   }, [accountNumber, loadHistory]);
+
+  const handleRefresh = async () => {
+    if (!accountNumber) return;
+    setRefreshing(true);
+    await loadHistory(accountNumber);
+    setRefreshing(false);
+  };
 
   const handleReverse = async (transactionId) => {
     const result = await reverse(transactionId);
@@ -37,13 +46,18 @@ export function TransactionHistoryScreen() {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScreenBackground>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={COLORS.primary} />}
+    >
       <Text style={styles.title}>Historial</Text>
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
       {!transactions.length && !error ? <EmptyState title="Sin historial" description="No hay movimientos registrados." /> : null}
 
       {transactions.map((item) => (
-        <Card key={item.id || item.transactionId} style={styles.card}>
+        <Card key={item._id || item.id || item.transactionId} style={styles.card}>
           <View style={styles.row}>
             <Text style={styles.cardTitle}>{item.description || item.normalizedType || "Transacción"}</Text>
             <Text style={styles.badge}>{item.status || "PENDIENTE"}</Text>
@@ -51,20 +65,20 @@ export function TransactionHistoryScreen() {
           <Text style={styles.subtitle}>{item.normalizedType || "N/D"}</Text>
           <Text style={styles.balance}>{formatAmount(item.amount)}</Text>
           {item.canReverse ? (
-            <Button title="Revertir" variant="secondary" onPress={() => handleReverse(item.id || item.transactionId)} />
+            <Button title="Revertir" variant="secondary" onPress={() => handleReverse(item._id || item.id || item.transactionId)} />
           ) : null}
         </Card>
       ))}
 
       <Button title="Volver" variant="secondary" onPress={() => navigation.goBack()} />
     </ScrollView>
+    </ScreenBackground>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
   content: {
     padding: SPACING.lg,

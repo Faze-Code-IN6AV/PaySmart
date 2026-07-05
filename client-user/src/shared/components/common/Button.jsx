@@ -1,7 +1,7 @@
 // /Users/diego/Tareas/Taller/PaySmart/client-user/src/shared/components/common/Button.jsx
 import { ActivityIndicator, Pressable, StyleSheet, Text } from "react-native";
 
-import { COLORS, FONT_SIZE, SHADOWS, SPACING } from "../../constants/theme";
+import { COLORS, FONT_SIZE, SPACING } from "../../constants/theme";
 
 export function Button({ title, onPress, variant = "primary", loading = false, disabled = false }) {
   const isSecondary = variant === "secondary";
@@ -18,7 +18,7 @@ export function Button({ title, onPress, variant = "primary", loading = false, d
       ]}
     >
       {loading ? (
-        <ActivityIndicator color={isSecondary ? COLORS.primary : COLORS.surface} />
+        <ActivityIndicator color={isSecondary ? COLORS.primary : COLORS.onPrimary} />
       ) : (
         <Text style={[styles.text, isSecondary ? styles.secondaryText : null]}>{title}</Text>
       )}
@@ -34,13 +34,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     minHeight: 48,
-    ...SHADOWS.sm,
   },
   primary: {
     backgroundColor: COLORS.primary,
   },
   secondary: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: "rgba(65,210,242,0.08)",
     borderWidth: 1,
     borderColor: COLORS.border,
   },
@@ -48,12 +47,12 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   pressed: {
-    opacity: 0.9,
+    opacity: 0.85,
   },
   text: {
-    color: COLORS.surface,
+    color: COLORS.onPrimary,
     fontSize: FONT_SIZE.md,
-    fontWeight: "600",
+    fontWeight: "700",
   },
   secondaryText: {
     color: COLORS.primary,
