@@ -13,6 +13,7 @@ Sistema de pagos basado en arquitectura de microservicios, desarrollado como par
 - **FavoriteAccountService**: Gestión de cuentas favoritas y transferencias rápidas.
 - **ReportService**: Reportes administrativos de movimientos y cuentas.
 - **client-admin**: Frontend web (React + Vite) para administradores y clientes.
+- **client-user**: Aplicación móvil (React Native + Expo) para clientes.
 
 ---
 
@@ -50,6 +51,7 @@ Sistema de pagos basado en arquitectura de microservicios, desarrollado como par
 | FavoriteAccountService | 3004   |
 | ReportService          | 3005   |
 | client-admin (dev)     | 5173   |
+| client-user (Expo dev) | 8081   |
 
 ---
 
@@ -511,6 +513,59 @@ La app estará disponible en `http://localhost:5173`.
 
 ---
 
+## client-user (App Móvil)
+
+Aplicación móvil desarrollada con **React Native + Expo**, pensada exclusivamente para clientes.
+
+### Tecnologías
+
+- Framework: **React Native 0.83** + **Expo 55**
+- Navegación: **@react-navigation** (bottom-tabs + native-stack)
+- Estado global: **Zustand 5**
+- Formularios: **react-hook-form**
+- Almacenamiento seguro: **expo-secure-store**
+- HTTP: **Axios** (instancias por microservicio)
+
+### Funcionalidades
+
+- Autenticación de clientes con sesión persistente (token seguro con `expo-secure-store`).
+- Gestión de cuentas bancarias propias (ver y crear).
+- Transacciones: depósitos, transferencias, reversiones e historial.
+- Productos: ver catálogo, comprar y revisar compras propias.
+- Cuentas favoritas y transferencias rápidas.
+- Edición de perfil propio.
+
+### Variables de Entorno
+
+Copia `.env.example` como `.env` en `client-user/` y completa los valores:
+
+```env
+EXPO_PUBLIC_AUTH_URL=http://IP:3000/api/v1/auth
+EXPO_PUBLIC_ACCOUNT_URL=http://IP:3001/paySmart/v1
+EXPO_PUBLIC_FAVORITE_URL=http://IP:3004/paySmart/v1
+EXPO_PUBLIC_PRODUCT_URL=http://IP:3003/paySmart/v1
+EXPO_PUBLIC_REPORT_URL=http://IP:3005/paySmart/v1
+EXPO_PUBLIC_TRANSACTION_URL=http://IP:3002/paySmart/v1
+```
+
+> **Importante:** en el `.env` real (no en el `.env.example`), cada `IP` debe reemplazarse por la dirección IP de tu propia máquina en la red local (no `localhost`), ya que el dispositivo/emulador de Expo necesita alcanzar los microservicios a través de la red. Lo mismo aplica para el `appsettings.json` del AuthService: donde diga `IP` en el `.env.example` o en `appsettings.example.json`, en el archivo real debe colocarse tu IP local.
+
+### Instalación
+
+```bash
+cd .\client-user\
+# Copiar .env.example como .env y reemplazar las IP por la de tu máquina
+pnpm install
+pnpm start
+```
+
+Al ejecutar `pnpm start` se abrirá el CLI de Expo:
+
+- Presiona **`?`** para ver todos los comandos disponibles.
+- Presiona **`a`** para abrir la app en un emulador/dispositivo Android.
+
+---
+
 ## Estructura del Proyecto
 
 ```
@@ -598,6 +653,22 @@ paysmart/
 │   │       └── utils/
 │   ├── index.html
 │   ├── vite.config.js
+│   └── package.json
+│
+├── client-user/                        ← App Móvil (Expo)
+│   ├── assets/
+│   ├── src/
+│   │   ├── features/                  # auth, accounts, transactions, products, favorites, profile, home, clients
+│   │   ├── navigation/                 # AppNavigator, AuthStack, MainTabs
+│   │   └── shared/
+│   │       ├── api/                   # Instancias Axios por microservicio
+│   │       ├── components/
+│   │       ├── hooks/
+│   │       └── store/
+│   ├── App.jsx
+│   ├── app.json
+│   ├── index.js
+│   ├── .env.example
 │   └── package.json
 │
 ├── postgre_db/
@@ -689,3 +760,18 @@ cd .\client-admin\
 pnpm install
 pnpm run dev
 ```
+
+### client-user (App Móvil)
+```bash
+cd .\client-user\
+# Copiar .env.example como .env y completar los valores
+pnpm install
+pnpm start
+```
+Con el CLI de Expo abierto:
+- Presiona `?` para ver los comandos disponibles.
+- Presiona `a` para abrir la app en el emulador/dispositivo Android.
+
+### Nota importante sobre las IP
+
+En los archivos `.env.example` (client-user) y `appsettings.example.json` (AuthService) las URLs usan el valor literal `IP` como placeholder. Al crear tus archivos reales (`.env` y `appsettings.json`), **debes reemplazar `IP` por la dirección IP de tu propia máquina** en la red local (por ejemplo `192.168.1.X`), y no dejar `localhost`, ya que tanto la app móvil (Expo) como el AuthService necesitan comunicarse con los demás servicios a través de la red local.
