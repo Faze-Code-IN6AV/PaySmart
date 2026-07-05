@@ -1,7 +1,7 @@
 // /Users/diego/Tareas/Taller/PaySmart/client-user/src/shared/components/common/Common.jsx
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 
-import { COLORS, FONT_SIZE, SHADOWS, SPACING } from "../../constants/theme";
+import { COLORS, FONT_SIZE, SPACING } from "../../constants/theme";
 
 export function LoadingSpinner({ label = "Cargando..." }) {
   return (
@@ -31,6 +31,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     padding: SPACING.xl,
+    backgroundColor: COLORS.background,
   },
   label: {
     marginTop: SPACING.sm,
@@ -56,6 +57,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.surface,
     borderRadius: 16,
     padding: SPACING.lg,
-    ...SHADOWS.sm,
+    borderWidth: 1,
+    borderColor: "rgba(65,210,242,0.12)",
   },
 });
