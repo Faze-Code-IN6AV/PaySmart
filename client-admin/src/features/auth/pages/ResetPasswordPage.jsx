@@ -42,12 +42,33 @@ export const ResetPasswordPage = () => {
 
   return (
     <div
-      className='min-h-screen flex items-center justify-center p-4'
+      className='min-h-screen flex items-center justify-center p-4 relative overflow-hidden'
       style={{ backgroundColor: '#0B1830' }}
     >
+      {/* Fondo decorativo elegante */}
+      <div className='absolute inset-0 pointer-events-none' style={{ zIndex: 0 }}>
+        <div style={{
+          position: 'absolute', top: '-180px', right: '-160px',
+          width: '520px', height: '520px', borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(65,210,242,0.10) 0%, transparent 70%)',
+        }} />
+        <div style={{
+          position: 'absolute', bottom: '-220px', left: '-180px',
+          width: '600px', height: '600px', borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(255,233,104,0.06) 0%, transparent 70%)',
+        }} />
+        <div style={{
+          position: 'absolute', inset: 0,
+          backgroundImage: 'radial-gradient(circle, rgba(65,210,242,0.06) 1px, transparent 1px)',
+          backgroundSize: '26px 26px',
+          maskImage: 'radial-gradient(ellipse at center, black 0%, transparent 70%)',
+          WebkitMaskImage: 'radial-gradient(ellipse at center, black 0%, transparent 70%)',
+        }} />
+      </div>
+
       <div
-        className='w-full max-w-md rounded-xl shadow-2xl p-6 md:p-10 animate-fadeIn'
-        style={{ backgroundColor: '#162C5F', border: '1px solid #41D2F2' }}
+        className='w-full max-w-md rounded-xl shadow-2xl p-6 md:p-10 animate-fadeIn relative'
+        style={{ backgroundColor: '#162C5F', border: '1px solid #41D2F2', zIndex: 1 }}
       >
         <div className='flex justify-center mb-6'>
           <img src={logo} alt='PaySmart Logo' className='h-16 w-auto object-contain' />

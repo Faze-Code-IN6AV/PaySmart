@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
     ArrowPathIcon,
     ChartBarIcon,
@@ -8,8 +8,12 @@ import {
     FunnelIcon,
     CalendarDaysIcon,
     ExclamationCircleIcon,
+    WalletIcon,
+    EyeIcon,
+    EyeSlashIcon,
 } from '@heroicons/react/24/outline';
 import { useReport } from '../hooks/useReport.js';
+import { useAccountStore } from '../../account/store/accountStore.js';
 import { CurrencyConverter } from '../../../shared/components/CurrencyConverter.jsx';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -120,7 +124,20 @@ export const ReportPage = () => {
     const [movLimit, setMovLimit] = useState(10);
     const [overviewLimit, setOverviewLimit] = useState(5);
 
-    if (!isAdmin) return (
+    const accounts = useAccountStore((s) => s.accounts);
+    const fetchAccounts = useAccountStore((s) => s.fetchAccounts);
+    const [balanceVisible, setBalanceVisible] = useState(false);
+
+    useEffect(() => {
+        if (!isAdmin) fetchAccounts();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isAdmin]);
+
+    if (!isAdmin) {
+        const totalBalance = accounts.reduce((sum, a) => sum + (Number(a.balance) || 0), 0);
+        const activeCount = accounts.filter((a) => a.status === 'ACTIVO').length;
+
+        return (
         <div className='flex flex-col gap-6'>
             <div>
                 <h1 className='text-2xl font-bold' style={{ color: '#FFFFFF' }}>Bienvenido a PaySmart</h1>
@@ -128,9 +145,49 @@ export const ReportPage = () => {
                     Selecciona una sección del menú lateral para continuar
                 </p>
             </div>
+
+            {/* Total de dinero en todas las cuentas del cliente */}
+            <div
+                className='rounded-2xl p-5 relative overflow-hidden'
+                style={{ backgroundColor: '#162C5F', border: '1px solid rgba(65,210,242,0.2)' }}
+            >
+                <div style={{
+                    position: 'absolute', top: '-30px', right: '-30px',
+                    width: '120px', height: '120px', borderRadius: '50%',
+                    backgroundColor: 'rgba(65,210,242,0.07)',
+                }} />
+                <div className='flex items-center gap-2 mb-2 relative'>
+                    <div className='w-8 h-8 rounded-lg flex items-center justify-center' style={{ backgroundColor: 'rgba(65,210,242,0.15)' }}>
+                        <WalletIcon className='w-4 h-4' style={{ color: '#41D2F2' }} />
+                    </div>
+                    <span className='text-xs font-bold uppercase tracking-wider' style={{ color: 'rgba(255,255,255,0.5)' }}>
+                        Total en todas tus cuentas
+                    </span>
+                </div>
+                <div className='flex items-center gap-3 relative'>
+                    <p className='text-3xl font-bold' style={{ color: '#FFFFFF' }}>
+                        {balanceVisible
+                            ? new Intl.NumberFormat('es-GT', { style: 'currency', currency: 'GTQ' }).format(totalBalance)
+                            : 'Q •••••••'}
+                    </p>
+                    <button
+                        onClick={() => setBalanceVisible((v) => !v)}
+                        className='p-1.5 rounded-lg hover:opacity-70 transition-opacity'
+                        style={{ color: '#41D2F2' }}
+                        title={balanceVisible ? 'Ocultar saldo' : 'Mostrar saldo'}
+                    >
+                        {balanceVisible ? <EyeSlashIcon className='w-5 h-5' /> : <EyeIcon className='w-5 h-5' />}
+                    </button>
+                </div>
+                <p className='text-xs mt-1 relative' style={{ color: 'rgba(255,255,255,0.4)' }}>
+                    {accounts.length} cuenta{accounts.length !== 1 ? 's' : ''} · {activeCount} activa{activeCount !== 1 ? 's' : ''}
+                </p>
+            </div>
+
             <CurrencyConverter />
         </div>
-    );
+        );
+    }
 
     // KPIs derivados de los datos reales
     const topAccount = accountsMostMovements[0];

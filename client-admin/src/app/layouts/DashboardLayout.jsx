@@ -131,7 +131,25 @@ export const DashboardLayout = () => {
         </div>
       )}
 
-      <div className='flex-1 flex flex-col h-full overflow-y-auto'>
+      <div className='flex-1 flex flex-col h-full overflow-y-auto relative'>
+        {/* Fondo decorativo elegante del dashboard */}
+        <div className='fixed inset-0 pointer-events-none' style={{ zIndex: 0 }}>
+          <div style={{
+            position: 'absolute', top: '-160px', right: '-140px',
+            width: '480px', height: '480px', borderRadius: '50%',
+            background: 'radial-gradient(circle, rgba(65,210,242,0.05) 0%, transparent 70%)',
+          }} />
+          <div style={{
+            position: 'absolute', bottom: '-200px', left: '30%',
+            width: '560px', height: '560px', borderRadius: '50%',
+            background: 'radial-gradient(circle, rgba(255,233,104,0.03) 0%, transparent 70%)',
+          }} />
+          <div style={{
+            position: 'absolute', inset: 0,
+            backgroundImage: 'radial-gradient(circle, rgba(65,210,242,0.035) 1px, transparent 1px)',
+            backgroundSize: '30px 30px',
+          }} />
+        </div>
         <header
           style={{
             position: 'sticky', top: 0, zIndex: 30,
@@ -242,7 +260,7 @@ export const DashboardLayout = () => {
           </div>
         </header>
 
-        <main className='flex-1 px-4 lg:px-8 py-6'>
+        <main className='flex-1 px-4 lg:px-8 py-6 relative' style={{ zIndex: 1 }}>
           <Outlet />
         </main>
       </div>
