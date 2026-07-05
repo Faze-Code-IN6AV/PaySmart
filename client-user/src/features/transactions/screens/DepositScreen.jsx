@@ -24,7 +24,7 @@ export function DepositScreen() {
     const result = await deposit(values);
     if (result) {
       Alert.alert("Depósito exitoso", "El depósito se registró correctamente.");
-      navigation.goBack();
+      navigation.reset({ index: 0, routes: [{ name: "TransactionsList" }] });
     }
   };
 

@@ -8,7 +8,7 @@ import { COLORS } from "./src/shared/constants/theme";
 export default function App() {
   return (
     <SafeAreaProvider>
-      <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.background }}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.background }} edges={["left", "right", "bottom"]}>
         <AppNavigator />
         <StatusBar style="light" />
       </SafeAreaView>
