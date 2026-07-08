@@ -1,0 +1,13 @@
+node_modules
+.env
+.env.*
+!.env.example
+.git
+.gitignore
+README.md
+uploads
+logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+dist
