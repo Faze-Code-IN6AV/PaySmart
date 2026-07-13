@@ -1,0 +1,283 @@
+name: paysmart
+
+services:
+  postgres:
+    image: postgres:13
+    container_name: paysmart_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-PAYSMART}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-paySmart!}
+      POSTGRES_DB: ${POSTGRES_DB:-paysmart_db}
+    ports:
+      - "${POSTGRES_PORT:-5436}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-PAYSMART} -d ${POSTGRES_DB:-paysmart_db}"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks:
+      - paysmart-network
+
+  mongodb:
+    image: mongo:7
+    container_name: paysmart_mongodb
+    restart: unless-stopped
+    ports:
+      - "${MONGODB_PORT:-27018}:27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    networks:
+      - paysmart-network
+
+  auth-service:
+    build:
+      context: ./auth-service
+      dockerfile: ../dockerfiles/Dockerfile.auth-service
+    container_name: paysmart_auth_service
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:3000
+      DOTNET_USE_POLLING_FILE_WATCHER: "1"
+      ConnectionStrings__DefaultConnection: >-
+        Host=postgres;Port=5432;Database=${POSTGRES_DB:-paysmart_db};
+        Username=${POSTGRES_USER:-PAYSMART};Password=${POSTGRES_PASSWORD:-paySmart!}
+      AppSettings__FrontendUrl: ${FRONTEND_URL:-http://localhost:5173}
+      JwtSettings__SecretKey: ${JWT_SECRET:-FYEfpvTweYNgAJmWD+rg9n9DkIcO8EeWKNn/GzslmMk=}
+      JwtSettings__Issuer: ${JWT_ISSUER:-PaySmart}
+      JwtSettings__Audience: ${JWT_AUDIENCE:-PaySmart}
+      JwtSettings__ExpirationMinutes: ${JWT_EXPIRATION_MINUTES:-60}
+    env_file:
+      - path: .env.docker
+        required: false
+    volumes:
+      - ./auth-service:/src
+      - /src/src/AuthService.Api/bin
+      - /src/src/AuthService.Api/obj
+      - /src/src/AuthService.Application/bin
+      - /src/src/AuthService.Application/obj
+      - /src/src/AuthService.Domain/bin
+      - /src/src/AuthService.Domain/obj
+      - /src/src/AuthService.Persistence/bin
+      - /src/src/AuthService.Persistence/obj
+    ports:
+      - "${AUTH_SERVICE_PORT:-3000}:3000"
+    networks:
+      - paysmart-network
+
+  account-service:
+    build:
+      context: ./account-service
+      dockerfile: ../dockerfiles/Dockerfile.account-service
+    container_name: paysmart_account_service
+    restart: unless-stopped
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    environment:
+      NODE_ENV: development
+      PORT: 3001
+      URI_MONGODB: mongodb://mongodb:27017/${MONGO_DB_ACCOUNT:-account-PS}
+      JWT_SECRET: ${JWT_SECRET:-FYEfpvTweYNgAJmWD+rg9n9DkIcO8EeWKNn/GzslmMk=}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-1h}
+      JWT_ISSUER: ${JWT_ISSUER:-PaySmart}
+      JWT_AUDIENCE: ${JWT_AUDIENCE:-PaySmart}
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:-paysmart-internal-secret-2026-change-in-production}
+    env_file:
+      - path: .env.docker
+        required: false
+    volumes:
+      - ./account-service:/app
+      - /app/node_modules
+    ports:
+      - "${ACCOUNT_SERVICE_PORT:-3001}:3001"
+    networks:
+      - paysmart-network
+
+  transaction-service:
+    build:
+      context: ./transaction-service
+      dockerfile: ../dockerfiles/Dockerfile.transaction-service
+    container_name: paysmart_transaction_service
+    restart: unless-stopped
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      account-service:
+        condition: service_started
+    environment:
+      NODE_ENV: development
+      PORT: 3002
+      URI_MONGODB: mongodb://mongodb:27017/${MONGO_DB_TRANSACTION:-transaction-PS}
+      JWT_SECRET: ${JWT_SECRET:-FYEfpvTweYNgAJmWD+rg9n9DkIcO8EeWKNn/GzslmMk=}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-1h}
+      JWT_ISSUER: ${JWT_ISSUER:-PaySmart}
+      JWT_AUDIENCE: ${JWT_AUDIENCE:-PaySmart}
+      ACCOUNT_SERVICE_URL: http://account-service:3001/paySmart/v1/account
+      SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
+      SMTP_PORT: ${SMTP_PORT:-465}
+      SMTP_USER: ${SMTP_USER:-fazecode001@gmail.com}
+      SMTP_PASS: ${SMTP_PASS}
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:-paysmart-internal-secret-2026-change-in-production}
+    env_file:
+      - path: .env.docker
+        required: false
+    volumes:
+      - ./transaction-service:/app
+      - /app/node_modules
+    ports:
+      - "${TRANSACTION_SERVICE_PORT:-3002}:3002"
+    networks:
+      - paysmart-network
+
+  product-service:
+    build:
+      context: ./product-service
+      dockerfile: ../dockerfiles/Dockerfile.product-service
+    container_name: paysmart_product_service
+    restart: unless-stopped
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    environment:
+      NODE_ENV: development
+      PORT: 3003
+      URI_MONGODB: mongodb://mongodb:27017/${MONGO_DB_PRODUCT:-product-PS}
+      JWT_SECRET: ${JWT_SECRET:-FYEfpvTweYNgAJmWD+rg9n9DkIcO8EeWKNn/GzslmMk=}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-1h}
+      JWT_ISSUER: ${JWT_ISSUER:-PaySmart}
+      JWT_AUDIENCE: ${JWT_AUDIENCE:-PaySmart}
+    env_file:
+      - path: .env.docker
+        required: false
+    volumes:
+      - ./product-service:/app
+      - /app/node_modules
+    ports:
+      - "${PRODUCT_SERVICE_PORT:-3003}:3003"
+    networks:
+      - paysmart-network
+
+  favoriteaccount-service:
+    build:
+      context: ./favoriteaccount-service
+      dockerfile: ../dockerfiles/Dockerfile.favoriteaccount-service
+    container_name: paysmart_favorite_service
+    restart: unless-stopped
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      account-service:
+        condition: service_started
+      transaction-service:
+        condition: service_started
+    environment:
+      NODE_ENV: development
+      PORT: 3004
+      URI_MONGODB: mongodb://mongodb:27017/${MONGO_DB_FAVORITE:-favorite-PS}
+      JWT_SECRET: ${JWT_SECRET:-FYEfpvTweYNgAJmWD+rg9n9DkIcO8EeWKNn/GzslmMk=}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-1h}
+      JWT_ISSUER: ${JWT_ISSUER:-PaySmart}
+      JWT_AUDIENCE: ${JWT_AUDIENCE:-PaySmart}
+      ACCOUNT_SERVICE_URL: http://account-service:3001/paySmart/v1/account
+      TRANSACTION_SERVICE_URL: http://transaction-service:3002/paySmart/v1/transaction
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:-paysmart-internal-secret-2026-change-in-production}
+    env_file:
+      - path: .env.docker
+        required: false
+    volumes:
+      - ./favoriteaccount-service:/app
+      - /app/node_modules
+    ports:
+      - "${FAVORITE_SERVICE_PORT:-3004}:3004"
+    networks:
+      - paysmart-network
+
+  report-service:
+    build:
+      context: ./report-service
+      dockerfile: ../dockerfiles/Dockerfile.report-service
+    container_name: paysmart_report_service
+    restart: unless-stopped
+    depends_on:
+      transaction-service:
+        condition: service_started
+    environment:
+      NODE_ENV: development
+      PORT: 3005
+      JWT_SECRET: ${JWT_SECRET:-FYEfpvTweYNgAJmWD+rg9n9DkIcO8EeWKNn/GzslmMk=}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-1h}
+      JWT_ISSUER: ${JWT_ISSUER:-PaySmart}
+      JWT_AUDIENCE: ${JWT_AUDIENCE:-PaySmart}
+      TRANSACTION_SERVICE_URL: http://transaction-service:3002/paySmart/v1/transaction
+    env_file:
+      - path: .env.docker
+        required: false
+    volumes:
+      - ./report-service:/app
+      - /app/node_modules
+    ports:
+      - "${REPORT_SERVICE_PORT:-3005}:3005"
+    networks:
+      - paysmart-network
+
+  client-admin:
+    build:
+      context: .
+      dockerfile: dockerfiles/Dockerfile.client-admin
+    container_name: paysmart_client_admin
+    restart: unless-stopped
+    depends_on:
+      auth-service:
+        condition: service_started
+      account-service:
+        condition: service_started
+      transaction-service:
+        condition: service_started
+      product-service:
+        condition: service_started
+      favoriteaccount-service:
+        condition: service_started
+      report-service:
+        condition: service_started
+    environment:
+      VITE_AUTH_URL: ${VITE_AUTH_URL:-http://localhost:3000/api/v1}
+      VITE_ACCOUNT_URL: ${VITE_ACCOUNT_URL:-http://localhost:3001/paySmart/v1}
+      VITE_TRANSACTION_URL: ${VITE_TRANSACTION_URL:-http://localhost:3002/paySmart/v1}
+      VITE_PRODUCT_URL: ${VITE_PRODUCT_URL:-http://localhost:3003/paySmart/v1}
+      VITE_FAVORITE_URL: ${VITE_FAVORITE_URL:-http://localhost:3004/paySmart/v1}
+      VITE_REPORT_URL: ${VITE_REPORT_URL:-http://localhost:3005/paySmart/v1}
+      NODE_TLS_REJECT_UNAUTHORIZED: ${NODE_TLS_REJECT_UNAUTHORIZED:-0}
+      CHOKIDAR_USEPOLLING: "true"
+    volumes:
+      - ./client-admin:/app
+      - /app/node_modules
+    ports:
+      - "${CLIENT_ADMIN_PORT:-5173}:5173"
+    networks:
+      - paysmart-network
+
+networks:
+  paysmart-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  mongo_data:
